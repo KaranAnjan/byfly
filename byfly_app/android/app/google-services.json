@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1040993424108",
+    "project_id": "byfly-store",
+    "storage_bucket": "byfly-store.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1040993424108:android:60a360e3016e2e3cf64bc9",
+        "android_client_info": {
+          "package_name": "com.byfly.store.byfly_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1040993424108-0m68e4qgqla4bbmvbskmplk4g30ki0qe.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.byfly.store.byfly_app",
+            "certificate_hash": "6dd5883e864c31456d1b725e65609db1bc7bf74c"
+          }
+        },
+        {
+          "client_id": "1040993424108-bvuo0b2bfq7k62j62b84583md28af34q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC2jKRdzQpi4bU2YbThtpyo3yXdgZ95AGI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1040993424108-bvuo0b2bfq7k62j62b84583md28af34q.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

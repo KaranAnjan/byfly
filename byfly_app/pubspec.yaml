@@ -1,0 +1,36 @@
+name: byfly_app
+description: "ByFly Store Mobile App - Fashion Jewellery & Wholesale"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+  provider: ^6.1.2
+  cached_network_image: ^3.3.1
+  google_fonts: ^6.2.1
+  intl: ^0.19.0
+  flutter_lucide: ^1.1.0
+  url_launcher: ^6.2.5
+  flutter_spinkit: ^5.2.1
+  badges: ^3.1.2
+  shimmer: ^3.0.0
+  http: ^1.2.2
+  shared_preferences: ^2.5.3
+  firebase_core: ^3.15.2
+  firebase_auth: ^5.6.2
+  google_sign_in: ^6.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
