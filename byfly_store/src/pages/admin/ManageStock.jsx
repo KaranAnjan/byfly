@@ -18,7 +18,7 @@ const ManageStock = () => {
   }
 
   return (
-    <div>
+    <div className="p-5 sm:p-8">
       <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
         <div><h1 className="text-2xl font-bold text-gray-900">Stock Management</h1><p className="text-sm text-gray-500 mt-1">Track retail and wholesale inventory separately.</p></div>
         <button onClick={exportStock} className="flex items-center gap-2 border border-gray-200 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-50 transition"><Download className="h-4 w-4" />Export Stock CSV</button>

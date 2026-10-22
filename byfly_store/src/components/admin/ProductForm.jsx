@@ -10,10 +10,12 @@ const fieldClass = 'mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focu
 const ProductForm = ({ product, onSave, onCancel }) => {
   const { categories } = useCategories()
   const [loading, setLoading] = useState(false)
+  const [pendingFiles, setPendingFiles] = useState([])
   const [form, setForm] = useState({ product_name: '', category_id: '', product_code: '', description: '', images: [], retail_stock: 0, wholesale_stock: 0, wholesale_price: '', min_order_qty: 1, retail_price: '', retail_mrp: '', wholesale_mrp: '' })
 
   useEffect(() => {
     if (!product) return
+    setPendingFiles([])
     setForm({ product_name: product.product_name || '', category_id: product.category_id || '', product_code: product.product_code || '', description: product.description || '', images: product.images || [], retail_stock: product.stock_by_channel?.retail ?? product.stock ?? 0, wholesale_stock: product.stock_by_channel?.wholesale ?? 0, wholesale_price: product.wholesale_price ?? '', min_order_qty: product.min_order_qty || 1, retail_price: product.price ?? product.retail_price ?? '', retail_mrp: product.mrp ?? product.retail_mrp ?? '', wholesale_mrp: product.wholesale_mrp ?? '' })
   }, [product])
 
@@ -32,6 +34,14 @@ const ProductForm = ({ product, onSave, onCancel }) => {
       let productId = product?.id
       const saved = await apiRequest(product ? `/admin/products/${product.id}` : '/admin/products', { method: product ? 'PUT' : 'POST', body: JSON.stringify(productPayload) })
       productId = saved.id || productId
+      if (!product && pendingFiles.length && productId) {
+        for (const { file, index } of pendingFiles) {
+          const body = new FormData()
+          body.append('file', file)
+          body.append('image_index', String(index))
+          await apiRequest(`/admin/products/${productId}/images`, { method: 'POST', body })
+        }
+      }
       toast.success(product ? 'Product updated!' : 'Product added!')
       onSave()
     } catch (error) { toast.error(error.message) } finally { setLoading(false) }
@@ -48,7 +58,7 @@ const ProductForm = ({ product, onSave, onCancel }) => {
         <label className="text-sm font-medium text-gray-700">Description (optional)<textarea rows="4" value={form.description} onChange={(e) => set('description', e.target.value)} placeholder="Add product details shown on the product page" className={`${fieldClass} resize-y`} /></label>
         </div>
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 md:min-h-[220px] flex items-center justify-center">
-          <ImageUploader productId={product?.id} images={form.images} legacyImage={product?.image_url || ''} maxImages={product?.max_product_images || 4} onImagesChange={(images) => set('images', images)} />
+          <ImageUploader productId={product?.id} images={form.images} legacyImage={product?.image_url || ''} maxImages={product?.max_product_images || 4} onImagesChange={(images) => set('images', images)} onPendingFilesChange={setPendingFiles} />
         </div>
         <section className="md:col-span-2 rounded-xl border border-emerald-100 bg-emerald-50/50 p-4"><h4 className="font-semibold text-emerald-900">Retail section</h4><p className="mb-3 text-xs text-emerald-700">Shown to retail customers.</p><div className="grid grid-cols-1 md:grid-cols-3 gap-4"><label className="text-sm font-medium text-gray-700">Retail selling price (₹) *<input type="number" required min="0" step="0.01" value={form.retail_price} onChange={(e) => set('retail_price', e.target.value)} className={fieldClass} /></label><label className="text-sm font-medium text-gray-700">Retail MRP (₹) *<input type="number" required min="0" step="0.01" value={form.retail_mrp} onChange={(e) => set('retail_mrp', e.target.value)} className={fieldClass} /></label><label className="text-sm font-medium text-gray-700">Retail stock *<input type="number" required min="0" step="1" value={form.retail_stock} onChange={(e) => set('retail_stock', e.target.value)} className={fieldClass} /></label></div></section>
         <section className="md:col-span-2 rounded-xl border border-blue-100 bg-blue-50/50 p-4"><h4 className="font-semibold text-blue-900">Wholesale section</h4><p className="mb-3 text-xs text-blue-700">Shown only to approved wholesale customers.</p><div className="grid grid-cols-1 md:grid-cols-4 gap-4"><label className="text-sm font-medium text-gray-700">Wholesale selling price (₹) *<input type="number" required min="0" step="0.01" value={form.wholesale_price} onChange={(e) => set('wholesale_price', e.target.value)} className={fieldClass} /></label><label className="text-sm font-medium text-gray-700">Wholesale MRP (₹) *<input type="number" required min="0" step="0.01" value={form.wholesale_mrp} onChange={(e) => set('wholesale_mrp', e.target.value)} className={fieldClass} /></label><label className="text-sm font-medium text-gray-700">Minimum order quantity *<input type="number" required min="1" step="1" value={form.min_order_qty} onChange={(e) => set('min_order_qty', e.target.value)} className={fieldClass} /></label><label className="text-sm font-medium text-gray-700">Wholesale stock *<input type="number" required min="0" step="1" value={form.wholesale_stock} onChange={(e) => set('wholesale_stock', e.target.value)} className={fieldClass} /></label></div></section>

@@ -52,7 +52,7 @@ const ManageDelivery = () => {
   }
 
   return (
-    <div>
+    <div className="p-5 sm:p-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Delivery Management</h1>
         <div className="relative">

@@ -1,6 +1,7 @@
-export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1').replace(/\/$/, '')
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/$/, '')
 
 export async function apiRequest(path, options = {}) {
+  if (!API_BASE_URL) throw new Error('VITE_API_BASE_URL is not configured in the web store .env file')
   const headers = { ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }), ...(options.headers || {}) }
   const backendToken = localStorage.getItem('byfly_backend_token')
   const backendUser = JSON.parse(localStorage.getItem('byfly_backend_user') || 'null')

@@ -27,9 +27,11 @@ const AdminSidebar = () => {
   const isActive = (path) => location.pathname === path
 
   return (
-    <div className="w-64 bg-gray-900 text-white min-h-screen p-4 flex flex-col">
-      <div className="mb-8">
-        <h2 className="text-xl font-bold text-emerald-400">Byfly Admin</h2>
+    <div className="sticky top-0 flex h-screen w-64 shrink-0 flex-col bg-gradient-to-b from-[#241052] via-[#2e1268] to-[#1a0b3d] p-4 text-white">
+      <div className="mb-8 border-b border-white/10 pb-6 text-center">
+        <img src="/assets/newlogo.png" alt="Byfly logo" className="mx-auto mb-3 h-14 w-20 object-contain" />
+        <h2 className="text-xl font-bold tracking-wide text-amber-200">BYFLY</h2>
+        <p className="mt-1 text-[9px] uppercase tracking-[0.22em] text-white/60">Fashion jewellery house</p>
       </div>
 
       <nav className="flex-1 space-y-2">
@@ -39,8 +41,8 @@ const AdminSidebar = () => {
             to={link.to}
             className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
               isActive(link.to)
-                ? 'bg-emerald-600 text-white'
-                : 'text-gray-300 hover:bg-gray-800'
+                ? 'bg-gradient-to-r from-[#6334cf] to-[#4b21a5] text-white shadow-lg shadow-purple-950/30'
+                : 'text-purple-100/75 hover:bg-white/10 hover:text-white'
             }`}
           >
             <link.icon className="h-5 w-5" />
@@ -49,17 +51,17 @@ const AdminSidebar = () => {
         ))}
       </nav>
 
-      <div className="space-y-2 border-t border-gray-700 pt-4">
+      <div className="mt-auto space-y-2 border-t border-white/10 pt-4">
         <Link
           to="/"
-          className="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition"
+          className="flex items-center space-x-3 rounded-lg px-4 py-3 text-purple-100/75 transition hover:bg-white/10 hover:text-white"
         >
           <ArrowLeft className="h-5 w-5" />
           <span>Back to Site</span>
         </Link>
         <button
           onClick={signOut}
-          className="flex items-center space-x-3 px-4 py-3 text-red-400 hover:bg-gray-800 rounded-lg transition w-full"
+          className="flex w-full items-center space-x-3 rounded-lg px-4 py-3 text-red-300 transition hover:bg-white/10"
         >
           <LogOut className="h-5 w-5" />
           <span>Sign Out</span>

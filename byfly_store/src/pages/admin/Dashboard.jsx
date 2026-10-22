@@ -1,87 +1,45 @@
+import { Link } from 'react-router-dom'
 import { useProducts } from '../../hooks/useProducts'
 import { useCategories } from '../../hooks/useCategories'
-import { Package, FolderOpen, AlertTriangle, TrendingUp } from 'lucide-react'
+import { AlertTriangle, ArrowUpRight, BarChart3, Bell, Boxes, CalendarDays, ChevronRight, CircleAlert, PackageCheck, ScanBarcode, TrendingUp } from 'lucide-react'
 
 const Dashboard = () => {
-  const { products } = useProducts()
+  const { products, loading } = useProducts()
   const { categories } = useCategories()
-
   const totalProducts = products.length
-  const totalCategories = categories.length
-  const outOfStock = products.filter((p) => p.stock === 0).length
-  const lowStock = products.filter((p) => p.stock > 0 && p.stock <= 10).length
-
+  const totalStock = products.reduce((sum, product) => sum + Number(product.stock_by_channel?.total || product.stock || 0), 0)
+  const outOfStock = products.filter((product) => Number(product.stock_by_channel?.total || product.stock || 0) === 0).length
+  const lowStockItems = products.filter((product) => { const stock = Number(product.stock_by_channel?.total || product.stock || 0); return stock > 0 && stock <= 10 }).sort((a, b) => Number(a.stock_by_channel?.total || a.stock || 0) - Number(b.stock_by_channel?.total || b.stock || 0))
+  const lowStockCount = lowStockItems.length
+  const categoryData = categories.slice(0, 5).map((category) => {
+    const count = products.filter((product) => String(product.category_id || product.category?.id) === String(category.id)).length
+    return { name: category.category_name || category.name || 'Category', value: count, height: Math.max(18, Math.round((count / Math.max(totalProducts, 1)) * 100)) }
+  })
+  if (!categoryData.length) categoryData.push({ name: 'Catalog', value: totalProducts, height: 70 })
   const stats = [
-    {
-      label: 'Total Products',
-      value: totalProducts,
-      icon: Package,
-      color: 'bg-blue-500',
-    },
-    {
-      label: 'Categories',
-      value: totalCategories,
-      icon: FolderOpen,
-      color: 'bg-green-500',
-    },
-    {
-      label: 'Out of Stock',
-      value: outOfStock,
-      icon: AlertTriangle,
-      color: 'bg-red-500',
-    },
-    {
-      label: 'Low Stock (≤10)',
-      value: lowStock,
-      icon: TrendingUp,
-      color: 'bg-yellow-500',
-    },
+    { label: 'Total Products', value: totalProducts, icon: Boxes, className: 'from-[#1479ee] to-[#1c92f4]', caption: 'Live catalog count' },
+    { label: 'Stock-In Today', value: totalStock, icon: PackageCheck, className: 'from-[#19a85b] to-[#27bc6b]', caption: 'Across all channels' },
+    { label: 'Stock-Out Today', value: outOfStock, icon: CircleAlert, className: 'from-[#f68b13] to-[#ffab1d]', caption: 'Needs replenishment' },
+    { label: 'Low Stock Items', value: lowStockCount, icon: AlertTriangle, className: 'from-[#ef3d44] to-[#f45256]', caption: 'View details', href: '/admin/stock' },
   ]
-
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Dashboard</h1>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat) => (
-          <div
-            key={stat.label}
-            className="bg-white rounded-xl shadow-md p-6 flex items-center space-x-4"
-          >
-            <div
-              className={`${stat.color} p-3 rounded-lg text-white`}
-            >
-              <stat.icon className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">{stat.label}</p>
-              <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Recent low stock items */}
-      {lowStock > 0 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
-          <h3 className="font-semibold text-yellow-800 mb-3">
-            ⚠️ Low Stock Alert
-          </h3>
-          <div className="space-y-2">
-            {products
-              .filter((p) => p.stock > 0 && p.stock <= 10)
-              .map((p) => (
-                <div
-                  key={p.id}
-                  className="flex justify-between text-sm text-yellow-700"
-                >
-                  <span>{p.product_name}</span>
-                  <span className="font-bold">{p.stock} left</span>
-                </div>
-              ))}
-          </div>
+    <div className="min-h-screen bg-[#f4f6fb] text-[#1f2754]">
+      <header className="flex min-h-[74px] items-center justify-between border-b border-slate-200 bg-white px-5 py-4 sm:px-8">
+        <div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6243bd]">Byfly fashion jewellery house</p><h1 className="mt-1 text-xl font-bold tracking-tight sm:text-2xl">Stock Management System</h1></div>
+        <div className="flex items-center gap-3 text-sm text-slate-500"><div className="hidden items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 sm:flex"><CalendarDays className="h-4 w-4" /><span>Wed, 22 Oct 2025</span></div><div className="flex items-center gap-2 rounded-full bg-[#f1ecff] px-3 py-2 font-semibold text-[#4d2c9f]"><span className="grid h-7 w-7 place-items-center rounded-full bg-[#4f2aa6] text-xs text-white">A</span><span className="hidden sm:inline">Admin</span></div></div>
+      </header>
+      <div className="p-5 sm:p-8">
+        <div className="mb-6 flex items-end justify-between gap-4"><div><p className="text-sm text-slate-500">Welcome back, Admin</p><h2 className="mt-1 text-2xl font-bold text-[#202653]">Dashboard overview</h2></div><Link to="/admin/products" className="hidden items-center gap-2 rounded-lg bg-[#4f2aa6] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-purple-200 transition hover:bg-[#3b1d86] sm:flex">Manage products <ArrowUpRight className="h-4 w-4" /></Link></div>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {stats.map(({ label, value, icon: Icon, className, caption, href }) => { const card = <div className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${className} p-5 text-white shadow-lg`}><div className="absolute -right-5 -top-8 h-28 w-28 rounded-full bg-white/10" /><div className="relative flex items-start justify-between"><div><p className="text-sm font-medium text-white/85">{label}</p><p className="mt-2 text-3xl font-bold tracking-tight">{loading ? '—' : value.toLocaleString()}</p></div><div className="rounded-full bg-white/20 p-2.5"><Icon className="h-6 w-6" /></div></div><p className="relative mt-4 flex items-center gap-1 text-xs font-medium text-white/90">{label === 'Stock-In Today' && <TrendingUp className="h-3.5 w-3.5" />}{caption}{href && <ChevronRight className="ml-auto h-4 w-4" />}</p></div>; return href ? <Link key={label} to={href}>{card}</Link> : <div key={label}>{card}</div> })}
         </div>
-      )}
+        <div className="mt-5 grid gap-5 xl:grid-cols-[1.18fr_1fr_250px]">
+          <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><div><h3 className="font-bold">Stock Overview</h3><p className="mt-1 text-xs text-slate-400">Products by category</p></div><div className="flex gap-3 text-[11px] text-slate-500"><span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-[#20aa64]" />In stock</span><span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-[#ffad22]" />Low stock</span></div></div><div className="mt-6 flex h-52 items-end justify-around gap-3 border-b border-l border-slate-200 px-3 pb-0 pt-5">{categoryData.map((category) => <div key={category.name} className="flex h-full flex-1 items-end justify-center gap-1.5"><div className="w-5 rounded-t-md bg-[#20aa64] transition-all hover:bg-[#16894d]" style={{ height: `${category.height}%` }} /><div className="w-5 rounded-t-md bg-[#ffad22]" style={{ height: `${Math.max(12, category.height * 0.32)}%` }} /></div>)}</div><div className="mt-2 flex justify-around gap-3 pl-3">{categoryData.map((category) => <span key={category.name} className="min-w-0 flex-1 truncate text-center text-[11px] text-slate-500">{category.name}</span>)}</div></section>
+          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"><div className="flex items-center justify-between border-b border-slate-100 p-5"><div><h3 className="font-bold">Top low stock items</h3><p className="mt-1 text-xs text-slate-400">Prioritize replenishment</p></div><Link to="/admin/stock" className="text-xs font-semibold text-[#5a35b2]">View all <ChevronRight className="inline h-3 w-3" /></Link></div><div className="overflow-x-auto"><table className="w-full text-left text-xs"><thead className="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400"><tr><th className="px-4 py-3">#</th><th className="px-2 py-3">Product</th><th className="px-4 py-3 text-right">Stock</th></tr></thead><tbody>{(lowStockItems.length ? lowStockItems.slice(0, 5) : products.slice(0, 5)).map((product, index) => { const stock = Number(product.stock_by_channel?.total || product.stock || 0); return <tr key={product.id} className="border-t border-slate-100"><td className="px-4 py-3 text-slate-400">{index + 1}</td><td className="max-w-[170px] truncate px-2 py-3 font-medium text-slate-700">{product.product_name || 'Unnamed product'}</td><td className="px-4 py-3 text-right"><span className={`rounded px-2 py-1 font-bold ${stock === 0 ? 'bg-red-100 text-red-600' : 'bg-orange-100 text-orange-600'}`}>{stock}</span></td></tr> })}</tbody></table></div></section>
+          <section className="relative overflow-hidden rounded-xl bg-gradient-to-br from-[#eeeaff] to-[#f8f6ff] p-5 shadow-sm"><div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-white/70" /><ScanBarcode className="relative h-10 w-10 text-[#5b38b4]" /><h3 className="relative mt-5 text-lg font-bold text-[#34216d]">Scan. Update. Track.</h3><p className="relative mt-2 text-xs leading-5 text-[#6e61a4]">Use barcode scanning for fast and accurate stock management.</p><div className="relative mt-6 rounded-xl bg-[#282b3d] p-4 shadow-xl"><div className="mx-auto h-12 w-16 rounded-lg bg-gradient-to-br from-slate-500 to-slate-800 shadow-inner" /><div className="mt-3 h-5 rounded bg-white/90" style={{ backgroundImage: 'repeating-linear-gradient(90deg, #251452 0 2px, transparent 2px 5px)' }} /></div></section>
+        </div>
+        <div className="mt-5 grid gap-5 lg:grid-cols-2"><section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><div><h3 className="font-bold">Inventory health</h3><p className="mt-1 text-xs text-slate-400">At-a-glance stock status</p></div><BarChart3 className="h-5 w-5 text-[#6540bb]" /></div><div className="mt-5 grid grid-cols-3 gap-3"><div className="rounded-lg bg-emerald-50 p-4"><p className="text-xs text-emerald-700">Healthy</p><p className="mt-1 text-2xl font-bold text-emerald-800">{Math.max(totalProducts - lowStockCount - outOfStock, 0)}</p></div><div className="rounded-lg bg-amber-50 p-4"><p className="text-xs text-amber-700">Low stock</p><p className="mt-1 text-2xl font-bold text-amber-800">{lowStockCount}</p></div><div className="rounded-lg bg-rose-50 p-4"><p className="text-xs text-rose-700">Out</p><p className="mt-1 text-2xl font-bold text-rose-800">{outOfStock}</p></div></div></section><section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><div><h3 className="font-bold">Quick actions</h3><p className="mt-1 text-xs text-slate-400">Keep your catalog moving</p></div><Bell className="h-5 w-5 text-[#6540bb]" /></div><div className="mt-5 grid grid-cols-2 gap-3"><Link to="/admin/products" className="rounded-lg border border-slate-200 p-3 text-sm font-semibold text-slate-700 transition hover:border-purple-300 hover:bg-purple-50">Add product <ChevronRight className="float-right h-4 w-4 text-[#6540bb]" /></Link><Link to="/admin/stock" className="rounded-lg border border-slate-200 p-3 text-sm font-semibold text-slate-700 transition hover:border-purple-300 hover:bg-purple-50">Update stock <ChevronRight className="float-right h-4 w-4 text-[#6540bb]" /></Link></div></section></div>
+      </div>
     </div>
   )
 }

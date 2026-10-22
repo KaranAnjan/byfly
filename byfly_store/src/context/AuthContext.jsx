@@ -16,12 +16,6 @@ const saveBackendSession = (result) => {
   localStorage.setItem('byfly_backend_user', JSON.stringify(result.user))
 }
 
-// Comma-separated frontend admin allowlist from the Vite environment.
-const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || '')
-  .split(',')
-  .map((email) => email.trim().toLowerCase())
-  .filter(Boolean)
-
 const cacheBasicUser = (user) => {
   if (!user?.id) return
   try {
@@ -184,11 +178,10 @@ export const AuthProvider = ({ children }) => {
     await signOutFirebase()
   }
 
-  const isAdmin = user?.role === 'superadmin' || user?.role === 'admin' || profileSummary?.role === 'superadmin' || profileSummary?.role === 'admin' || Boolean(profileSummary?.is_admin) ||
-    Boolean(visibleAccountEmail(user) && ADMIN_EMAILS.includes(visibleAccountEmail(user).toLowerCase()))
+  const isAdmin = user?.role === 'superadmin' || user?.role === 'admin' || profileSummary?.role === 'superadmin' || profileSummary?.role === 'admin' || Boolean(profileSummary?.is_admin)
 
   return (
-    <AuthContext.Provider value={{ user, loading: loading || profileLoading, profileSummary, signIn, signInWithFirebaseToken, sendLoginOtp, verifyLoginOtp, signUp, signOut, isAdmin, ADMIN_EMAILS }}>
+    <AuthContext.Provider value={{ user, loading: loading || profileLoading, profileSummary, signIn, signInWithFirebaseToken, sendLoginOtp, verifyLoginOtp, signUp, signOut, isAdmin }}>
       {children}
     </AuthContext.Provider>
   )

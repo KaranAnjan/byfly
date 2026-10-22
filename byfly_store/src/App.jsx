@@ -34,9 +34,9 @@ import ManageWholesaleAccounts from './pages/admin/ManageWholesaleAccounts'
 // Admin Layout
 const AdminLayout = ({ children }) => (
   <ProtectedRoute>
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-[#f4f6fb]">
       <AdminSidebar />
-      <main className="flex-1 p-8">{children}</main>
+      <main className="min-w-0 flex-1">{children}</main>
     </div>
   </ProtectedRoute>
 )

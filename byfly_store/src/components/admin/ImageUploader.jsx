@@ -3,7 +3,7 @@ import { apiRequest } from '../../lib/apiClient'
 import { getImageUrl } from '../../lib/imageUrl'
 import { Upload, X, Loader2 } from 'lucide-react'
 
-const ImageUploader = ({ productId, images = [], legacyImage = '', maxImages = 4, onImagesChange }) => {
+const ImageUploader = ({ productId, images = [], legacyImage = '', maxImages = 4, onImagesChange, onPendingFilesChange }) => {
   const [items, setItems] = useState([])
   const [busy, setBusy] = useState(null)
 
@@ -23,7 +23,13 @@ const ImageUploader = ({ productId, images = [], legacyImage = '', maxImages = 4
     const file = event.target.files?.[0]
     if (!file) return
     if (file.size >= 1024 * 1024) { alert('Image must be smaller than 1 MB'); return }
-    if (!productId) { alert('Save the product first, then add images from Edit Product.'); return }
+    if (!productId) {
+      const next = [...items.filter((image) => Number(image.image_index) !== index), { url: URL.createObjectURL(file), image_index: index, localFile: file }]
+      update(next)
+      onPendingFilesChange?.((current) => [...current.filter((item) => item.index !== index), { file, index }].sort((a, b) => a.index - b.index))
+      event.target.value = ''
+      return
+    }
     try {
       setBusy(index)
       const body = new FormData()
@@ -36,7 +42,11 @@ const ImageUploader = ({ productId, images = [], legacyImage = '', maxImages = 4
   }
 
   const remove = async (image) => {
-    if (!productId) return
+    if (!productId) {
+      update(items.filter((item) => item !== image))
+      if (image.localFile) onPendingFilesChange?.((current) => current.filter((item) => item.index !== Number(image.image_index)))
+      return
+    }
     if (!image.id) { update(items.filter((item) => item !== image)); return }
     try {
       setBusy(Number(image.image_index))
@@ -48,8 +58,8 @@ const ImageUploader = ({ productId, images = [], legacyImage = '', maxImages = 4
 
   return <div className="w-full">
     <div className="mb-3 flex items-center justify-between"><div><p className="text-sm font-medium text-gray-700">Product images</p><p className="text-xs text-gray-500">Up to {maxImages} images, each under 1 MB</p></div><span className="text-xs text-gray-500">{items.length}/{maxImages}</span></div>
-    {!productId && <p className="rounded-lg bg-amber-50 p-3 text-xs text-amber-700">Save the product first. Then edit it to add up to four images.</p>}
-    {productId && <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+    {!productId && <p className="mb-3 rounded-lg bg-blue-50 p-3 text-xs text-blue-700">Choose up to four images now. They will upload automatically when you save the product.</p>}
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
       <div className="mx-auto h-[260px] w-full max-w-[260px]">
         {[1].map((index) => {
         const image = items.find((item) => Number(item.image_index) === index)
@@ -66,7 +76,7 @@ const ImageUploader = ({ productId, images = [], legacyImage = '', maxImages = 4
           </div>
         })}
       </div>
-    </div>}
+    </div>
   </div>
 }
 

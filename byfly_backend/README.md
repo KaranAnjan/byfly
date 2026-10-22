@@ -14,6 +14,8 @@ Set `DATABASE_URL` to the AWS RDS connection string in the deployment environmen
 
 When run locally from `byfly_backend`, the API loads the project root `.env`. It supports `AWS_HOST`, `AWS_PORT`, `AWS_DBNAME`, `AWS_USER`, `AWS_PASSWORD`, `AWS_SSLMODE`, `AWS_REGION`, and `S3_BUCKET_NAME`. AWS SDK credentials are read from `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. Rotate exposed credentials and use AWS Secrets Manager or an IAM role in production.
 
+Set `CORS_ORIGINS` in the deployment environment to the exact frontend origins, for example `http://localhost:5174,http://127.0.0.1:5174,https://w4kmm2gr-5174.inc1.devtunnels.ms`, then restart the API service.
+
 For AWS RDS, use a private subnet/security group and enable TLS. Set `AWS_SSLMODE=verify-full` only when the RDS CA certificate is installed on the API host; `require` is a safer initial connectivity setting than disabling TLS.
 
 Health check: `GET /healthz`

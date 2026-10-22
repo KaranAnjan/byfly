@@ -23,7 +23,7 @@ const ManageCategories = () => {
   if (loading) return <Loading />
 
   return (
-    <div>
+    <div className="p-5 sm:p-8">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">
         Manage Categories
       </h1>

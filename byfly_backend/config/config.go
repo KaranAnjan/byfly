@@ -17,10 +17,11 @@ type Config struct {
 }
 
 func Load() (Config, error) {
+	corsOrigins := strings.Split(os.Getenv("CORS_ORIGINS"), ",")
 	c := Config{
 		Env: os.Getenv("APP_ENV"), HTTPAddr: os.Getenv("HTTP_ADDR"),
 		DatabaseURL: os.Getenv("DATABASE_URL"), JWTSecret: os.Getenv("JWT_SECRET"),
-		CORSOrigins: strings.Split(os.Getenv("CORS_ORIGINS"), ","),
+		CORSOrigins: corsOrigins,
 	}
 	c.DatabaseHost = os.Getenv("AWS_HOST")
 	c.DatabasePort = os.Getenv("AWS_PORT")

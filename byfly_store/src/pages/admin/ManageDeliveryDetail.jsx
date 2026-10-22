@@ -46,7 +46,7 @@ const ManageDeliveryDetail = () => {
   if (!order) return <div className="rounded-xl bg-white p-8 text-center text-gray-500">Order not found.</div>
 
   return (
-    <div>
+    <div className="p-5 sm:p-8">
       <div className="mb-6 flex items-center gap-3">
         <Link to="/admin/delivery" className="rounded-lg p-2 text-gray-600 hover:bg-gray-100" aria-label="Back to delivery management"><ArrowLeft className="h-5 w-5" /></Link>
         <div>

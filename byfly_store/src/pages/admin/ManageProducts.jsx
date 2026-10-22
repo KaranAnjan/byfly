@@ -111,7 +111,7 @@ const ManageProducts = () => {
   if (loading || routeLoading) return <Loading />
 
   return (
-    <div>
+    <div className="p-5 sm:p-8">
       <div className="flex flex-wrap gap-3 justify-between items-center mb-6">
         <div className="flex items-center gap-3"><button type="button" onClick={() => navigate('/admin/products')} className="rounded-lg p-2 text-gray-600 hover:bg-gray-200" aria-label="Back to products"><ArrowLeft className="h-5 w-5" /></button><h1 className="text-2xl font-bold text-gray-900">{productNo ? `Edit Product ${productNo}` : 'Manage Products'}</h1></div>
         {!showForm && (
