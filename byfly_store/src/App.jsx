@@ -27,6 +27,8 @@ import Dashboard from './pages/admin/Dashboard'
 import ManageProducts from './pages/admin/ManageProducts'
 import ManageCategories from './pages/admin/ManageCategories'
 import ManageStock from './pages/admin/ManageStock'
+import StockMovement from './pages/admin/StockMovement'
+import PriceLookup from './pages/admin/PriceLookup'
 import ManageDelivery from './pages/admin/ManageDelivery'
 import ManageDeliveryDetail from './pages/admin/ManageDeliveryDetail'
 import ManageWholesaleAccounts from './pages/admin/ManageWholesaleAccounts'
@@ -34,9 +36,9 @@ import ManageWholesaleAccounts from './pages/admin/ManageWholesaleAccounts'
 // Admin Layout
 const AdminLayout = ({ children }) => (
   <ProtectedRoute>
-    <div className="flex min-h-screen bg-[#f4f6fb]">
+    <div className="flex h-screen overflow-hidden bg-[#f4f6fb]">
       <AdminSidebar />
-      <main className="min-w-0 flex-1">{children}</main>
+      <main className="h-screen min-w-0 flex-1 overflow-y-auto">{children}</main>
     </div>
   </ProtectedRoute>
 )
@@ -54,6 +56,9 @@ function AnimatedRoutes() {
         <Route path="/admin/products/:productNo/edit" element={<AdminLayout><ManageProducts /></AdminLayout>} />
         <Route path="/admin/categories" element={<AdminLayout><ManageCategories /></AdminLayout>} />
         <Route path="/admin/stock" element={<AdminLayout><ManageStock /></AdminLayout>} />
+        <Route path="/admin/stock-in" element={<AdminLayout><StockMovement mode="in" /></AdminLayout>} />
+        <Route path="/admin/stock-out" element={<AdminLayout><StockMovement mode="out" /></AdminLayout>} />
+        <Route path="/admin/prices" element={<AdminLayout><PriceLookup /></AdminLayout>} />
             <Route path="/admin/delivery" element={<AdminLayout><ManageDelivery /></AdminLayout>} />
             <Route path="/admin/delivery/:id" element={<AdminLayout><ManageDeliveryDetail /></AdminLayout>} />
             <Route path="/admin/wholesale-accounts" element={<AdminLayout><ManageWholesaleAccounts /></AdminLayout>} />

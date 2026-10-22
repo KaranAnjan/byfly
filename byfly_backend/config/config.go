@@ -12,7 +12,7 @@ type Config struct {
 	DatabaseHost, DatabasePort, DatabaseName                         string
 	AWSRegion, S3Bucket, S3PublicBaseURL, FirebaseServiceAccountJSON string
 	MaxProductImages                                                 int
-	RequestsPerSecond                                                int
+	RequestsPerSecond, LoginAttemptsPerMinute                        int
 	CORSOrigins                                                      []string
 }
 
@@ -43,6 +43,10 @@ func Load() (Config, error) {
 	c.RequestsPerSecond = 20
 	if value, err := strconv.Atoi(os.Getenv("RATE_LIMIT_PER_SECOND")); err == nil && value > 0 {
 		c.RequestsPerSecond = value
+	}
+	c.LoginAttemptsPerMinute = 5
+	if value, err := strconv.Atoi(os.Getenv("LOGIN_RATE_LIMIT_PER_MINUTE")); err == nil && value > 0 {
+		c.LoginAttemptsPerMinute = value
 	}
 	if c.Env == "" {
 		c.Env = "development"

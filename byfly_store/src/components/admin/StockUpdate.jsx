@@ -26,7 +26,7 @@ const StockUpdate = ({ product, onUpdate }) => {
     setSaving(true)
     try {
       await apiRequest(`/admin/products/${product.id}/stock`, { method: 'PUT', body: JSON.stringify({ retail_stock: retail, wholesale_stock: wholesale }) })
-      toast.success(`Stock saved. Total available: ${totalStock}`)
+      toast.success(`Stock updated. Total available: ${totalStock}`)
       onUpdate()
     } catch (error) {
       toast.error(error.message)
@@ -50,7 +50,7 @@ const StockUpdate = ({ product, onUpdate }) => {
     <td className="px-6 py-4">
       <button type="button" onClick={updateStock} disabled={saving}
         className="rounded bg-emerald-700 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50">
-        {saving ? 'Saving…' : 'Save stock'}
+        {saving ? 'Updating…' : 'Update Stock'}
       </button>
     </td>
   </>

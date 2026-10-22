@@ -45,6 +45,7 @@ type productInput struct {
 	Description          *string `json:"description"`
 	ImageURL             string  `json:"image_url"`
 	CategoryID           string  `json:"category_id"`
+	Cost                 float64 `json:"cost"`
 	RetailPrice          float64 `json:"retail_price"`
 	RetailMRP            float64 `json:"retail_mrp"`
 	WholesalePrice       float64 `json:"wholesale_price"`
@@ -79,7 +80,7 @@ func (s *Controller) SaveProduct(w http.ResponseWriter, r *http.Request) {
 		Error(w, 400, "could not save product")
 		return
 	}
-	_, err = tx.Exec(r.Context(), `INSERT INTO product_prices(product_id,retail_price,retail_mrp,wholesale_price,wholesale_mrp,wholesale_min_order_qty) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(product_id) DO UPDATE SET retail_price=EXCLUDED.retail_price,retail_mrp=EXCLUDED.retail_mrp,wholesale_price=EXCLUDED.wholesale_price,wholesale_mrp=EXCLUDED.wholesale_mrp,wholesale_min_order_qty=EXCLUDED.wholesale_min_order_qty`, id, in.RetailPrice, in.RetailMRP, in.WholesalePrice, in.WholesaleMRP, in.WholesaleMinOrderQty)
+	_, err = tx.Exec(r.Context(), `INSERT INTO product_prices(product_id,cost,retail_price,retail_mrp,wholesale_price,wholesale_mrp,wholesale_min_order_qty) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(product_id) DO UPDATE SET cost=EXCLUDED.cost,retail_price=EXCLUDED.retail_price,retail_mrp=EXCLUDED.retail_mrp,wholesale_price=EXCLUDED.wholesale_price,wholesale_mrp=EXCLUDED.wholesale_mrp,wholesale_min_order_qty=EXCLUDED.wholesale_min_order_qty`, id, in.Cost, in.RetailPrice, in.RetailMRP, in.WholesalePrice, in.WholesaleMRP, in.WholesaleMinOrderQty)
 	if err != nil {
 		Error(w, 400, "could not save product prices")
 		return

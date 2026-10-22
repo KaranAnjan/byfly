@@ -19,9 +19,12 @@ func New(server *service.Server, controller *controllers.Controller, c config.Co
 	r.Use(middleware.RateLimit(c.RequestsPerSecond))
 	r.Get("/healthz", server.Health)
 	r.Route("/api/v1", func(r chi.Router) {
-		r.Post("/auth/login", controller.Login)
-		r.Post("/auth/register", controller.Register)
-		r.Post("/auth/firebase", controller.FirebaseLogin)
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.LoginRateLimit(c.LoginAttemptsPerMinute))
+			r.Post("/auth/login", controller.Login)
+			r.Post("/auth/register", controller.Register)
+			r.Post("/auth/firebase", controller.FirebaseLogin)
+		})
 		r.Get("/categories", controller.Categories)
 		r.Get("/products/search", controller.SearchProducts)
 		r.Get("/products", controller.Products)

@@ -79,9 +79,10 @@ CREATE TRIGGER product_images_limit_trigger BEFORE INSERT ON product_images FOR 
 ALTER TABLE product_images DROP CONSTRAINT IF EXISTS product_images_image_index_check;
 CREATE TABLE IF NOT EXISTS product_prices (
   product_id text PRIMARY KEY REFERENCES products(id) ON DELETE CASCADE,
-  retail_price numeric(12,2), wholesale_price numeric(12,2), retail_mrp numeric(12,2), wholesale_mrp numeric(12,2),
+  cost numeric(12,2) NOT NULL DEFAULT 0, retail_price numeric(12,2), wholesale_price numeric(12,2), retail_mrp numeric(12,2), wholesale_mrp numeric(12,2),
   wholesale_min_order_qty integer NOT NULL DEFAULT 1 CHECK (wholesale_min_order_qty > 0), updated_at timestamptz NOT NULL DEFAULT now()
 );
+ALTER TABLE product_prices ADD COLUMN IF NOT EXISTS cost numeric(12,2) NOT NULL DEFAULT 0;
 CREATE TABLE IF NOT EXISTS product_stock (
   product_id text PRIMARY KEY REFERENCES products(id) ON DELETE CASCADE,
   retail_quantity integer NOT NULL DEFAULT 0 CHECK (retail_quantity >= 0), wholesale_quantity integer NOT NULL DEFAULT 0 CHECK (wholesale_quantity >= 0), updated_at timestamptz NOT NULL DEFAULT now()
