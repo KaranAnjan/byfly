@@ -20,6 +20,7 @@ const ProductTable = ({ products, onEdit, onDelete }) => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                 Category
               </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cost</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Retail Price</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Retail MRP</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Wholesale Price</th>
@@ -56,6 +57,7 @@ const ProductTable = ({ products, onEdit, onDelete }) => {
                 <td className="px-6 py-4 text-gray-500">
                   {product.categories?.category_name}
                 </td>
+                <td className="px-6 py-4 font-semibold">{product.cost != null ? `Rs. ${product.cost}` : 'Not set'}</td>
                 <td className="px-6 py-4 font-semibold">{product.price != null ? `Rs. ${product.price}` : 'Not set'}</td>
                 <td className="px-6 py-4">{product.mrp != null ? `Rs. ${product.mrp}` : 'Not set'}</td>
                 <td className="px-6 py-4 font-semibold">{product.wholesale_price != null ? `Rs. ${product.wholesale_price}` : 'Not set'}</td>
