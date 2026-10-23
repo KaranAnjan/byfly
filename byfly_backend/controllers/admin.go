@@ -1,8 +1,10 @@
 package controllers
 
 import (
+	"errors"
 	"fmt"
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -77,6 +79,11 @@ func (s *Controller) SaveProduct(w http.ResponseWriter, r *http.Request) {
 		err = tx.QueryRow(r.Context(), `INSERT INTO products(product_name,product_code,description,image_url,category_id) VALUES($1,$2,$3,$4,$5) RETURNING id`, in.ProductName, in.ProductCode, in.Description, in.ImageURL, in.CategoryID).Scan(&id)
 	}
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			Error(w, http.StatusConflict, "A product with this product code already exists")
+			return
+		}
 		Error(w, 400, "could not save product")
 		return
 	}

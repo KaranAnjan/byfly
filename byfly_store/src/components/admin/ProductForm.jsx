@@ -3,11 +3,11 @@ import { apiRequest } from '../../lib/apiClient'
 import { useCategories } from '../../hooks/useCategories'
 import ImageUploader from './ImageUploader'
 import toast from 'react-hot-toast'
-import { Save, X } from 'lucide-react'
+import { Barcode, Save, X } from 'lucide-react'
 
 const fieldClass = 'mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-emerald-500'
 
-const ProductForm = ({ product, onSave, onCancel }) => {
+const ProductForm = ({ product, existingProducts = [], onSave, onCancel }) => {
   const { categories } = useCategories()
   const [loading, setLoading] = useState(false)
   const [pendingFiles, setPendingFiles] = useState([])
@@ -20,9 +20,16 @@ const ProductForm = ({ product, onSave, onCancel }) => {
   }, [product])
 
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }))
+  const duplicateCode = Boolean(form.product_code.trim()) && existingProducts.some((item) => (
+    item.id !== product?.id && String(item.product_code || '').trim().toLowerCase() === form.product_code.trim().toLowerCase()
+  ))
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+    if (duplicateCode) {
+      toast.error('This product code already exists. Enter a unique product code.')
+      return
+    }
     setLoading(true)
     try {
       const cost = Number(form.cost), retailPrice = Number(form.retail_price), retailMrp = Number(form.retail_mrp), wholesalePrice = Number(form.wholesale_price), wholesaleMrp = Number(form.wholesale_mrp)
@@ -51,7 +58,25 @@ const ProductForm = ({ product, onSave, onCancel }) => {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-4">
-          <label className="text-sm font-medium text-gray-700">Product code *<input required value={form.product_code} onChange={(e) => set('product_code', e.target.value)} className={fieldClass} /></label>
+          <label className="text-sm font-medium text-gray-700">
+            <span className="flex items-center gap-2">Product code * <Barcode className="h-4 w-4 text-emerald-600" /></span>
+            <span className="mt-1 block text-xs font-normal text-gray-500">Scan with a barcode scanner or type the code manually.</span>
+            <span className="relative block">
+              <Barcode className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+              <input
+                required
+                autoFocus={!product}
+                inputMode="text"
+                autoComplete="off"
+                placeholder="Scan or enter product code"
+                value={form.product_code}
+                onChange={(e) => set('product_code', e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault() }}
+                className={`${fieldClass} pl-10 ${duplicateCode ? 'border-red-500 ring-2 ring-red-100' : ''}`}
+              />
+            </span>
+            {duplicateCode && <span className="mt-1 block text-xs font-medium text-red-600">This product code already exists. Please use a unique code.</span>}
+          </label>
           <label className="text-sm font-medium text-gray-700">Product name *<input required value={form.product_name} onChange={(e) => set('product_name', e.target.value)} className={fieldClass} /></label>
           <label className="text-sm font-medium text-gray-700">Category *<select required value={form.category_id} onChange={(e) => set('category_id', e.target.value)} className={fieldClass}><option value="">Select Category</option>{categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.category_name}</option>)}</select></label>
           <label className="text-sm font-medium text-gray-700">Description (optional)<textarea rows="3" value={form.description} onChange={(e) => set('description', e.target.value)} className={`${fieldClass} resize-y`} /></label>

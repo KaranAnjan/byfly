@@ -144,6 +144,7 @@ const ManageProducts = () => {
         <div className="mb-6">
           <ProductForm
             product={editingProduct}
+            existingProducts={products}
             onSave={handleSave}
             onCancel={handleCancel}
           />
