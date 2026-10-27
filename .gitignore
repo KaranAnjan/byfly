@@ -31,6 +31,8 @@ android/gradle/wrapper/gradle-wrapper.jar
 android/gradlew
 android/gradlew.bat
 ios/Pods/
+byfly_app/android/.gradle/
+byfly_app/android/local.properties
 
 # Android / iOS generated files
 *.keystore

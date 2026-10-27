@@ -1,23 +1,24 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Barcode, Search, Package, Pencil, Tags } from 'lucide-react'
 import { useProducts } from '../../hooks/useProducts'
 import { getImageUrl } from '../../lib/imageUrl'
 
 const PriceLookup = () => {
-  const { products, loading } = useProducts()
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState(null)
-  const matches = useMemo(() => {
+  const { products: matches, loading } = useProducts(undefined, query, { page: 1, limit: 10, searchFields: 'name_code' })
+  useEffect(() => {
     const term = query.trim().toLowerCase()
-    if (!term) return products.slice(0, 8)
-    return products.filter((product) => `${product.product_code} ${product.product_no} ${product.product_name}`.toLowerCase().includes(term)).slice(0, 8)
-  }, [products, query])
+    if (!term || loading) return
+    const exactMatch = matches.find((product) => String(product.product_code || '').trim().toLowerCase() === term)
+    if (exactMatch) setSelected(exactMatch)
+  }, [query, matches, loading])
   const handleSearchKeyDown = (event) => {
     if (event.key !== 'Enter') return
     event.preventDefault()
     const term = query.trim().toLowerCase()
-    const exactMatch = products.find((product) => [product.product_code, product.product_no].some((value) => String(value || '').trim().toLowerCase() === term))
+    const exactMatch = matches.find((product) => [product.product_code, product.product_no].some((value) => String(value || '').trim().toLowerCase() === term))
     if (exactMatch) setSelected(exactMatch)
   }
 

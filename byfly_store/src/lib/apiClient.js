@@ -9,6 +9,11 @@ export async function apiRequest(path, options = {}) {
   if (backendUser?.id) { headers['X-User-ID'] = backendUser.id; headers['X-User-Email'] = backendUser.email || '' }
   const response = await fetch(`${API_BASE_URL}${path}`, { ...options, headers })
   const body = await response.json().catch(() => null)
+  if (response.status === 401) {
+    localStorage.removeItem('byfly_backend_token')
+    localStorage.removeItem('byfly_backend_user')
+    window.dispatchEvent(new Event('byfly-auth-invalid'))
+  }
   if (!response.ok) throw new Error(body?.error || `API request failed (${response.status})`)
   return body
 }

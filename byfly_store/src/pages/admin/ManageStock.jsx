@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useProducts } from '../../hooks/useProducts'
 import StockUpdate from '../../components/admin/StockUpdate'
 import Loading from '../../components/common/Loading'
@@ -8,12 +8,16 @@ import { getImageUrl } from '../../lib/imageUrl'
 import { downloadCsv } from '../../lib/csv'
 
 const ManageStock = () => {
-  const { products, loading, refetch } = useProducts()
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const PAGE_SIZE = 25
+  const { products, loading, refetch, totalCount } = useProducts(undefined, search, { page, limit: PAGE_SIZE })
 
-  if (loading) return <Loading />
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE))
+  useEffect(() => { setPage(1) }, [search])
+  useEffect(() => { if (page > totalPages) setPage(totalPages) }, [page, totalPages])
 
-  const filteredProducts = products.filter((product) => `${product.product_code} ${product.product_no} ${product.product_name}`.toLowerCase().includes(search.trim().toLowerCase()))
+  if (loading && !products.length && !search.trim()) return <Loading />
 
   const exportStock = () => {
     const columns = ['product_code', 'product_name', 'retail_stock', 'wholesale_stock', 'total_stock', 'retail_price', 'wholesale_price']
@@ -44,7 +48,8 @@ const ManageStock = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {filteredProducts.map((product) => (
+            {loading && products.length === 0 && <tr><td colSpan={6} className="px-6 py-8 text-center text-sm text-slate-400">Loading products...</td></tr>}
+            {products.map((product) => (
               <tr key={product.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4">
                   <div className="flex items-center space-x-3">
@@ -68,10 +73,11 @@ const ManageStock = () => {
                 <StockUpdate product={product} onUpdate={refetch} />
               </tr>
             ))}
-            {filteredProducts.length === 0 && <tr><td colSpan={6} className="px-6 py-8 text-center text-sm text-slate-400">No products found.</td></tr>}
+            {products.length === 0 && <tr><td colSpan={6} className="px-6 py-8 text-center text-sm text-slate-400">No products found.</td></tr>}
           </tbody>
         </table>
       </div>
+      {totalCount > 0 && <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 shadow-sm"><p className="text-sm text-slate-500">Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, totalCount)} of {totalCount} products</p><div className="flex items-center gap-1"><button type="button" disabled={page === 1} onClick={() => setPage((value) => value - 1)} className="rounded-lg border px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-40">Previous</button>{Array.from({ length: totalPages }, (_, index) => index + 1).map((number) => <button type="button" key={number} onClick={() => setPage(number)} className={`h-8 min-w-8 rounded-lg px-2 text-sm ${number === page ? 'bg-purple-600 text-white' : 'border hover:bg-purple-50'}`}>{number}</button>)}<button type="button" disabled={page === totalPages} onClick={() => setPage((value) => value + 1)} className="rounded-lg border px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-40">Next</button></div></div>}
     </div>
   )
 }

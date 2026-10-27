@@ -14,6 +14,8 @@ import {
   ArrowUpFromLine,
   ChevronDown,
   ChevronUp,
+  Menu,
+  X,
   Tags,
 } from 'lucide-react'
 
@@ -23,6 +25,7 @@ const AdminSidebar = () => {
   const navRef = useRef(null)
   const [canScrollUp, setCanScrollUp] = useState(false)
   const [canScrollDown, setCanScrollDown] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   const links = [
     { to: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
@@ -37,6 +40,10 @@ const AdminSidebar = () => {
   ]
 
   const isActive = (path) => location.pathname === path
+
+  useEffect(() => {
+    setMobileOpen(false)
+  }, [location.pathname])
 
   useEffect(() => {
     const nav = navRef.current
@@ -62,7 +69,13 @@ const AdminSidebar = () => {
   }
 
   return (
-    <div className="flex h-screen w-64 shrink-0 flex-col overflow-hidden bg-gradient-to-b from-[#241052] via-[#2e1268] to-[#1a0b3d] p-4 text-white">
+    <>
+      <button type="button" onClick={() => setMobileOpen(true)} aria-label="Open admin menu" className="fixed left-4 top-3 z-50 rounded-lg bg-[#4f2aa6] p-2.5 text-white shadow-lg md:hidden">
+        <Menu className="h-5 w-5" />
+      </button>
+      {mobileOpen && <button type="button" onClick={() => setMobileOpen(false)} aria-label="Close admin menu overlay" className="fixed inset-0 z-30 bg-slate-950/50 md:hidden" />}
+      <div className={`fixed inset-y-0 left-0 z-40 flex h-screen w-72 shrink-0 flex-col overflow-hidden bg-gradient-to-b from-[#241052] via-[#2e1268] to-[#1a0b3d] p-4 text-white shadow-2xl transition-transform duration-200 md:static md:z-auto md:w-64 md:translate-x-0 md:shadow-none ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <button type="button" onClick={() => setMobileOpen(false)} aria-label="Close admin menu" className="absolute right-3 top-3 rounded-lg p-2 text-white/80 hover:bg-white/10 md:hidden"><X className="h-5 w-5" /></button>
       <div className="mb-8 border-b border-white/10 pb-6 text-center">
         <img src="/assets/newlogo.png" alt="Byfly logo" className="mx-auto mb-3 h-14 w-20 object-contain" />
         <h2 className="text-xl font-bold tracking-wide text-amber-200">BYFLY</h2>
@@ -125,7 +138,8 @@ const AdminSidebar = () => {
           <span>Sign Out</span>
         </button>
       </div>
-    </div>
+      </div>
+    </>
   )
 }
 

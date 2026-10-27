@@ -38,7 +38,7 @@ const AdminLayout = ({ children }) => (
   <ProtectedRoute>
     <div className="flex h-screen overflow-hidden bg-[#f4f6fb]">
       <AdminSidebar />
-      <main className="h-screen min-w-0 flex-1 overflow-y-auto">{children}</main>
+      <main className="h-screen min-w-0 flex-1 overflow-y-auto pt-16 md:pt-0">{children}</main>
     </div>
   </ProtectedRoute>
 )

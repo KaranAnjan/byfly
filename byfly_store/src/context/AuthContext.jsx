@@ -63,6 +63,16 @@ export const AuthProvider = ({ children }) => {
   }, [])
 
   useEffect(() => {
+    const invalidateSession = () => {
+      setUser(null)
+      setProfileSummary(null)
+      setProfileLoading(false)
+    }
+    window.addEventListener('byfly-auth-invalid', invalidateSession)
+    return () => window.removeEventListener('byfly-auth-invalid', invalidateSession)
+  }, [])
+
+  useEffect(() => {
     const syncSession = (event) => {
       if (event.key === 'byfly_backend_token' || event.key === 'byfly_backend_user') {
         const token = localStorage.getItem('byfly_backend_token')
@@ -130,7 +140,7 @@ export const AuthProvider = ({ children }) => {
             console.warn('Unable to cache user details in this browser.', cacheError)
           }
         })
-        .catch((error) => console.warn('Unable to load the account profile.', error))
+        .catch((error) => { if (error.message !== 'authentication required') console.warn('Unable to load the account profile.', error) })
         .finally(() => { if (!cancelled) setProfileLoading(false) })
     }
 

@@ -11,10 +11,12 @@ import toast from 'react-hot-toast'
 import { ArrowLeft, Download, FileSpreadsheet, Plus, Search, Upload } from 'lucide-react'
 
 const ManageProducts = () => {
-  const { products, loading, refetch } = useProducts()
+  const PAGE_SIZE = 25
+  const [page, setPage] = useState(1)
   const { categories } = useCategories()
   const [showForm, setShowForm] = useState(false)
   const [search, setSearch] = useState('')
+  const { products, loading, refetch, totalCount } = useProducts(undefined, search, { page, limit: PAGE_SIZE })
   const [searchParams] = useSearchParams()
   const [editingProduct, setEditingProduct] = useState(null)
   const [routeLoading, setRouteLoading] = useState(false)
@@ -120,9 +122,11 @@ const ManageProducts = () => {
     } catch (error) { toast.error(error.message || 'Import failed.') }
   }
 
-  const filteredProducts = products.filter((product) => `${product.product_code} ${product.product_no} ${product.product_name}`.toLowerCase().includes(search.trim().toLowerCase()))
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE))
+  useEffect(() => { setPage(1) }, [search])
+  useEffect(() => { if (page > totalPages) setPage(totalPages) }, [page, totalPages])
 
-  if (loading || routeLoading) return <Loading />
+  if (routeLoading) return <Loading />
 
   return (
     <div className="px-5 pb-8 pt-8 sm:px-8 sm:pt-8">
@@ -152,10 +156,19 @@ const ManageProducts = () => {
       )}
 
       {!showForm && <ProductTable
-        products={filteredProducts}
+        products={products}
+        loading={loading}
         onEdit={handleEdit}
         onDelete={handleDelete}
       />}
+      {!showForm && totalCount > 0 && <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 shadow-sm">
+        <p className="text-sm text-slate-500">Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, totalCount)} of {totalCount} products</p>
+        <div className="flex items-center gap-1">
+          <button type="button" disabled={page === 1} onClick={() => setPage((value) => value - 1)} className="rounded-lg border px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-40">Previous</button>
+          {Array.from({ length: totalPages }, (_, index) => index + 1).map((number) => <button type="button" key={number} onClick={() => setPage(number)} className={`h-8 min-w-8 rounded-lg px-2 text-sm ${number === page ? 'bg-purple-600 text-white' : 'border hover:bg-purple-50'}`}>{number}</button>)}
+          <button type="button" disabled={page === totalPages} onClick={() => setPage((value) => value + 1)} className="rounded-lg border px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-40">Next</button>
+        </div>
+      </div>}
     </div>
   )
 }

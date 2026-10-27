@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -63,6 +65,7 @@ class _AuthGateState extends State<AuthGate>
     with SingleTickerProviderStateMixin {
   late final AnimationController _progressController;
   bool _minimumSplashTimeFinished = false;
+  bool _catalogFetchStarted = false;
 
   @override
   void initState() {
@@ -84,9 +87,17 @@ class _AuthGateState extends State<AuthGate>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
-      builder: (context, auth, child) {
-        final showSplash = auth.isLoading || !_minimumSplashTimeFinished;
+    return Consumer2<AuthProvider, ProductProvider>(
+      builder: (context, auth, catalog, child) {
+        if (auth.isAuthenticated && !_catalogFetchStarted) {
+          _catalogFetchStarted = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) context.read<ProductProvider>().fetchProducts();
+          });
+        }
+        final showSplash = auth.isLoading ||
+            !_minimumSplashTimeFinished ||
+            (auth.isAuthenticated && !catalog.hasLoadedProducts);
         if (showSplash) return _BrandedSplash(progress: _progressController);
         return auth.isAuthenticated ? const HomeScreen() : const LoginScreen();
       },
@@ -109,9 +120,9 @@ class _BrandedSplash extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF0B6B4F),
-              Color(0xFF064E3B),
-              Color(0xFF043D2F),
+              Color(0xFFE5F4E9),
+              Color(0xFFC7E9D0),
+              Color(0xFFA7D7B5),
             ],
             stops: [0, .48, 1],
           ),
@@ -124,7 +135,7 @@ class _BrandedSplash extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.fromLTRB(28, 34, 28, 30),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0B6B4F),
+                  color: const Color(0xFF064E3B),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(color: Colors.white.withValues(alpha: .8)),
                   boxShadow: [
@@ -177,19 +188,7 @@ class _BrandedSplash extends StatelessWidget {
                           fontSize: 12),
                     ),
                     const SizedBox(height: 32),
-                    AnimatedBuilder(
-                      animation: progress,
-                      builder: (context, child) => ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: LinearProgressIndicator(
-                          value: progress.value,
-                          minHeight: 7,
-                          backgroundColor: Colors.white.withValues(alpha: .28),
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                              Color(0xFFBDE8C9)),
-                        ),
-                      ),
-                    ),
+                    const _LoadingDots(),
                     const SizedBox(height: 12),
                     Text(
                       'Loading...',
@@ -204,6 +203,58 @@ class _BrandedSplash extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _LoadingDots extends StatefulWidget {
+  const _LoadingDots();
+
+  @override
+  State<_LoadingDots> createState() => _LoadingDotsState();
+}
+
+class _LoadingDotsState extends State<_LoadingDots>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) => Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: List.generate(3, (index) {
+          final phase = (_controller.value + index * .2) % 1;
+          final opacity =
+              .35 + (.65 * ((math.sin(phase * math.pi * 2) + 1) / 2));
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Opacity(
+              opacity: opacity,
+              child: const CircleAvatar(
+                radius: 4,
+                backgroundColor: Color(0xFFBDE8C9),
+              ),
+            ),
+          );
+        }),
       ),
     );
   }

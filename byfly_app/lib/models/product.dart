@@ -43,7 +43,8 @@ class Product {
 
   factory Product.fromJson(Map<String, dynamic> json) {
     // Parse nested prices table if present
-    final priceCatalog = json['product_prices'] ?? json['product_price_catalog'];
+    final priceCatalog =
+        json['product_prices'] ?? json['product_price_catalog'];
     Map<String, dynamic>? priceMap;
     if (priceCatalog is List && priceCatalog.isNotEmpty) {
       priceMap = priceCatalog.first as Map<String, dynamic>?;
@@ -51,10 +52,19 @@ class Product {
       priceMap = priceCatalog;
     }
 
-    final retailP = (priceMap?['retail_price'] ?? json['price'] ?? json['retail_price'] as num?)?.toDouble();
-    final wholesaleP = (priceMap?['wholesale_price'] ?? json['wholesale_price'] as num?)?.toDouble();
-    final retailM = (priceMap?['retail_mrp'] ?? json['mrp'] ?? json['retail_mrp'] as num?)?.toDouble();
-    final wholesaleM = (priceMap?['wholesale_mrp'] ?? json['wholesale_mrp'] as num?)?.toDouble();
+    final retailP = (priceMap?['retail_price'] ??
+            json['price'] ??
+            json['retail_price'] as num?)
+        ?.toDouble();
+    final wholesaleP =
+        (priceMap?['wholesale_price'] ?? json['wholesale_price'] as num?)
+            ?.toDouble();
+    final retailM =
+        (priceMap?['retail_mrp'] ?? json['mrp'] ?? json['retail_mrp'] as num?)
+            ?.toDouble();
+    final wholesaleM =
+        (priceMap?['wholesale_mrp'] ?? json['wholesale_mrp'] as num?)
+            ?.toDouble();
 
     // Parse stock record if present
     final stockRecord = json['product_stock'];
@@ -76,17 +86,33 @@ class Product {
     final calculatedMrp = wholesaleM;
     final calculatedStock = wStock;
 
-    final wholesaleMinQty = ((json['wholesale_min_order_qty'] ?? priceMap?['wholesale_min_order_qty']) as num?)?.toInt() ?? 1;
+    final wholesaleMinQty = ((json['wholesale_min_order_qty'] ??
+                priceMap?['wholesale_min_order_qty']) as num?)
+            ?.toInt() ??
+        1;
 
     final parsedImages = <String>[];
     final rawImages = json['images'];
     if (rawImages is List) {
       for (final item in rawImages) {
-        if (item is Map && item['url'] != null && item['url'].toString().isNotEmpty) parsedImages.add(item['url'].toString());
+        if (item is Map &&
+            item['url'] != null &&
+            item['url'].toString().isNotEmpty) {
+          parsedImages.add(item['url'].toString());
+        }
       }
     }
-    final primaryImage = parsedImages.isNotEmpty ? parsedImages.first : json['image_url']?.toString();
-    if (primaryImage != null && primaryImage.isNotEmpty && !parsedImages.contains(primaryImage)) parsedImages.insert(0, primaryImage);
+    final rawPrimaryImage = parsedImages.isNotEmpty
+        ? parsedImages.first
+        : json['image_url']?.toString();
+    final primaryImage = rawPrimaryImage == null || rawPrimaryImage.isEmpty
+        ? null
+        : rawPrimaryImage;
+    if (primaryImage != null &&
+        primaryImage.isNotEmpty &&
+        !parsedImages.contains(primaryImage)) {
+      parsedImages.insert(0, primaryImage);
+    }
 
     return Product(
       id: json['id'].toString(),
@@ -105,7 +131,9 @@ class Product {
       imageUrl: primaryImage,
       imageUrls: parsedImages,
       categoryId: json['category_id']?.toString(),
-      categoryName: json['categories'] != null ? json['categories']['category_name'] : null,
+      categoryName: json['categories'] != null
+          ? json['categories']['category_name']
+          : null,
       description: json['description']?.toString(),
     );
   }

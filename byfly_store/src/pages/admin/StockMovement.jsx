@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Search, ScanBarcode, ArrowDownToLine, ArrowUpFromLine, Package, Save } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -8,18 +8,23 @@ import { getImageUrl } from '../../lib/imageUrl'
 
 const StockMovement = ({ mode }) => {
   const isStockIn = mode === 'in'
-  const { products, loading, refetch } = useProducts()
   const [code, setCode] = useState('')
   const [selected, setSelected] = useState(null)
   const [retailQuantity, setRetailQuantity] = useState('')
   const [wholesaleQuantity, setWholesaleQuantity] = useState('')
   const [saving, setSaving] = useState(false)
-
-  const matches = useMemo(() => {
-    const term = code.trim().toLowerCase()
-    if (!term || selected) return []
-    return products.filter((product) => `${product.product_code} ${product.product_no} ${product.product_name}`.toLowerCase().includes(term)).slice(0, 6)
-  }, [code, products, selected])
+  const { products, loading, refetch } = useProducts(undefined, code, { page: 1, limit: 10, searchFields: 'name_code' })
+  const normalizedCode = code.trim().toLowerCase()
+  const matches = selected ? [] : [...products].sort((a, b) => {
+    const aExact = [a.product_code, a.product_no].some((value) => String(value || '').trim().toLowerCase() === normalizedCode)
+    const bExact = [b.product_code, b.product_no].some((value) => String(value || '').trim().toLowerCase() === normalizedCode)
+    return Number(bExact) - Number(aExact)
+  }).slice(0, 10)
+  useEffect(() => {
+    if (!normalizedCode || loading || selected) return
+    const exactMatch = products.find((product) => String(product.product_code || '').trim().toLowerCase() === normalizedCode)
+    if (exactMatch) chooseProduct(exactMatch)
+  }, [normalizedCode, products, loading, selected])
 
   const chooseProduct = (product) => {
     setSelected(product)
@@ -57,7 +62,7 @@ const StockMovement = ({ mode }) => {
       <form onSubmit={saveMovement} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <label className="text-sm font-semibold text-slate-700">Product code or barcode<input autoFocus value={code} onChange={(event) => { setCode(event.target.value); setSelected(null) }} onKeyDown={(event) => { if (event.key === 'Enter' && matches[0]) { event.preventDefault(); chooseProduct(matches[0]) } }} placeholder="Scan barcode or type product code" className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 font-mono text-base outline-none ring-purple-200 focus:border-purple-500 focus:ring-4" /></label>
         {!selected && <div className="mt-2 space-y-1">{matches.map((product) => <button type="button" key={product.id} onClick={() => chooseProduct(product)} className="flex w-full items-center justify-between rounded-lg border border-slate-100 px-3 py-2 text-left text-sm hover:bg-purple-50"><span><strong>{product.product_code}</strong> · {product.product_name}</span><span className="text-xs text-slate-400">{product.stock_by_channel?.total ?? 0} total</span></button>)}</div>}
-        {selected && <div className="mt-5 rounded-xl border border-purple-100 bg-purple-50 p-4"><div className="flex items-center gap-4">{selected.image_url ? <img src={getImageUrl(selected.image_url)} alt={selected.product_name} className="h-16 w-16 rounded-lg object-cover" /> : <div className="grid h-16 w-16 place-items-center rounded-lg bg-white text-purple-400"><Package /></div>}<div className="min-w-0 flex-1"><p className="truncate font-semibold">{selected.product_name}</p><p className="font-mono text-xs text-slate-500">{selected.product_code}</p></div><div className="flex flex-col items-end gap-2"><Link to={`/admin/products/${selected.product_no || selected.product_code}/edit`} className="text-xs font-semibold text-purple-700 hover:underline">Edit Product</Link><button type="button" onClick={clearProduct} className="text-xs text-slate-500">Change</button></div></div><div className="mt-4 grid grid-cols-2 gap-2 text-xs sm:grid-cols-3"><div className="rounded-lg bg-white p-2"><p className="text-slate-400">Retail price / MRP</p><p className="font-semibold">₹{selected.retail_price ?? 0} / ₹{selected.retail_mrp ?? selected.mrp ?? 0}</p></div><div className="rounded-lg bg-white p-2"><p className="text-slate-400">Wholesale / MRP</p><p className="font-semibold">₹{selected.wholesale_price ?? 0} / ₹{selected.wholesale_mrp ?? 0}</p></div><div className="rounded-lg bg-white p-2"><p className="text-slate-400">Retail / Wholesale stock</p><p className="font-semibold">{selected.stock_by_channel?.retail ?? 0} / {selected.stock_by_channel?.wholesale ?? 0}</p></div></div></div>}
+        {selected && <div className="mt-5 rounded-xl border border-purple-100 bg-purple-50 p-4"><div className="flex items-center gap-4">{selected.image_url ? <img src={getImageUrl(selected.image_url)} alt={selected.product_name} className="h-16 w-16 rounded-lg object-cover" /> : <div className="grid h-16 w-16 place-items-center rounded-lg bg-white text-purple-400"><Package /></div>}<div className="min-w-0 flex-1"><p className="truncate font-semibold">{selected.product_name}</p><p className="font-mono text-xs text-slate-500">{selected.product_code}</p></div><button type="button" onClick={clearProduct} className="text-xs text-slate-500">Change</button></div><div className="mt-4 grid grid-cols-2 gap-2 text-xs sm:grid-cols-3"><div className="rounded-lg bg-white p-2"><p className="text-slate-400">Retail price / MRP</p><p className="font-semibold">₹{selected.retail_price ?? 0} / ₹{selected.retail_mrp ?? selected.mrp ?? 0}</p></div><div className="rounded-lg bg-white p-2"><p className="text-slate-400">Wholesale / MRP</p><p className="font-semibold">₹{selected.wholesale_price ?? 0} / ₹{selected.wholesale_mrp ?? 0}</p></div><div className="rounded-lg bg-white p-2"><p className="text-slate-400">Retail / Wholesale stock</p><p className="font-semibold">{selected.stock_by_channel?.retail ?? 0} / {selected.stock_by_channel?.wholesale ?? 0}</p></div></div></div>}
         <div className="mt-6 grid gap-4 sm:grid-cols-2"><label className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-900">Retail stock quantity <span className="font-normal text-emerald-700">(leave blank to keep current)</span><input type="number" min="1" step="1" value={retailQuantity} onChange={(event) => setRetailQuantity(event.target.value)} placeholder="No change" className="mt-2 w-full rounded-lg border border-emerald-200 bg-white px-3 py-2 font-normal" /></label><label className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm font-semibold text-blue-900">Wholesale stock quantity <span className="font-normal text-blue-700">(leave blank to keep current)</span><input type="number" min="1" step="1" value={wholesaleQuantity} onChange={(event) => setWholesaleQuantity(event.target.value)} placeholder="No change" className="mt-2 w-full rounded-lg border border-blue-200 bg-white px-3 py-2 font-normal" /></label></div>
         <p className="mt-5 rounded-lg bg-slate-50 p-3 text-xs text-slate-500">Prices are managed from the Edit Product page.</p>
         <button type="submit" disabled={saving || loading || !selected} className={`mt-6 inline-flex items-center gap-2 rounded-xl px-5 py-3 font-semibold text-white disabled:opacity-50 ${isStockIn ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'}`}><Save className="h-4 w-4" />{saving ? 'Saving...' : isStockIn ? 'Save stock in' : 'Save stock out'}</button>

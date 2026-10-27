@@ -4,9 +4,9 @@ import { useCategories } from '../../hooks/useCategories'
 import { AlertTriangle, ArrowUpRight, BarChart3, Bell, Boxes, CalendarDays, ChevronRight, CircleAlert, PackageCheck, ScanBarcode, TrendingUp } from 'lucide-react'
 
 const Dashboard = () => {
-  const { products, loading } = useProducts()
+  const { products, loading, totalCount } = useProducts()
   const { categories } = useCategories()
-  const totalProducts = products.length
+  const totalProducts = totalCount || products.length
   const totalStock = products.reduce((sum, product) => sum + Number(product.stock_by_channel?.total || product.stock || 0), 0)
   const outOfStock = products.filter((product) => Number(product.stock_by_channel?.total || product.stock || 0) === 0).length
   const lowStockItems = products.filter((product) => { const stock = Number(product.stock_by_channel?.total || product.stock || 0); return stock > 0 && stock <= 10 }).sort((a, b) => Number(a.stock_by_channel?.total || a.stock || 0) - Number(b.stock_by_channel?.total || b.stock || 0))

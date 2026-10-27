@@ -51,31 +51,7 @@ class ProductCard extends StatelessWidget {
                     child: SizedBox.expand(
                       child: Hero(
                         tag: 'product-${product.id}',
-                        child: product.imageUrl != null
-                            ? CachedNetworkImage(
-                                imageUrl: getImageUrl(product.imageUrl ?? ''),
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                height: double.infinity,
-                                placeholder: (context, url) => Container(
-                                  color: const Color(0xFFF0F3EB),
-                                  child: const Center(
-                                      child: CircularProgressIndicator(
-                                          strokeWidth: 2)),
-                                ),
-                                errorWidget: (context, url, error) =>
-                                    const Center(
-                                  child: Icon(Icons.broken_image,
-                                      color: Colors.grey),
-                                ),
-                              )
-                            : Container(
-                                color: const Color(0xFFF0F3EB),
-                                child: const Center(
-                                  child: Icon(Icons.image,
-                                      size: 40, color: Colors.grey),
-                                ),
-                              ),
+                        child: _ProductCardImage(product: product),
                       ),
                     ),
                   ),
@@ -258,6 +234,76 @@ class ProductCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ProductCardImage extends StatefulWidget {
+  final Product product;
+
+  const _ProductCardImage({required this.product});
+
+  @override
+  State<_ProductCardImage> createState() => _ProductCardImageState();
+}
+
+class _ProductCardImageState extends State<_ProductCardImage> {
+  int _imageIndex = 0;
+  int _attempts = 0;
+  bool _retryScheduled = false;
+
+  List<String> get _urls {
+    final raw = <String>[
+      ...widget.product.imageUrls,
+      if (widget.product.imageUrl?.isNotEmpty == true) widget.product.imageUrl!,
+    ];
+    final urls = <String>[];
+    for (final value in raw) {
+      final direct = value.trim();
+      if (direct.isEmpty) continue;
+      final proxied = ApiClient.imageUrl(direct);
+      if (!urls.contains(proxied)) urls.add(proxied);
+      if (!urls.contains(direct)) urls.add(direct);
+    }
+    return urls;
+  }
+
+  Widget _placeholder() => Container(
+        color: const Color(0xFFF0F3EB),
+        child: const Center(
+          child: Icon(Icons.image_outlined, color: Color(0xFF9AA89F), size: 30),
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final urls = _urls;
+    if (urls.isEmpty || _imageIndex >= urls.length) return _placeholder();
+    return CachedNetworkImage(
+      imageUrl: urls[_imageIndex],
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
+      fadeInDuration: const Duration(milliseconds: 180),
+      memCacheWidth: 600,
+      maxWidthDiskCache: 600,
+      placeholder: (context, url) => _placeholder(),
+      errorWidget: (context, url, error) {
+        if (!_retryScheduled && _attempts < urls.length * 2) {
+          _retryScheduled = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Future<void>.delayed(const Duration(milliseconds: 700), () {
+              if (!mounted) return;
+              setState(() {
+                _attempts++;
+                _imageIndex = (_imageIndex + 1) % urls.length;
+                _retryScheduled = false;
+              });
+            });
+          });
+        }
+        return _placeholder();
+      },
     );
   }
 }

@@ -38,6 +38,7 @@ func (s *Controller) Products(w http.ResponseWriter, r *http.Request) {
 	paginated := r.URL.Query().Get("paginated") == "true"
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	totalCount := 0
 	if paginated {
 		if page < 1 {
 			page = 1
@@ -46,6 +47,16 @@ func (s *Controller) Products(w http.ResponseWriter, r *http.Request) {
 			limit = 50
 		}
 		offset := (page - 1) * limit
+		countQuery := `SELECT COUNT(*) FROM products p WHERE COALESCE(p.is_active,true)=true`
+		countArgs := []any{}
+		if cat := r.URL.Query().Get("category_id"); cat != "" {
+			countQuery += ` AND p.category_id=$1`
+			countArgs = append(countArgs, cat)
+		}
+		if err := s.DB.QueryRow(r.Context(), countQuery, countArgs...).Scan(&totalCount); err != nil {
+			Error(w, 500, "could not count products")
+			return
+		}
 		limitPlaceholder := len(args) + 1
 		offsetPlaceholder := len(args) + 2
 		q += fmt.Sprintf(" LIMIT $%d OFFSET $%d", limitPlaceholder, offsetPlaceholder)
@@ -66,7 +77,7 @@ func (s *Controller) Products(w http.ResponseWriter, r *http.Request) {
 		if hasMore {
 			products = products[:limit]
 		}
-		JSON(w, 200, map[string]any{"items": products, "page": page, "limit": limit, "has_more": hasMore})
+		JSON(w, 200, map[string]any{"items": products, "page": page, "limit": limit, "has_more": hasMore, "total_count": totalCount})
 		return
 	}
 	JSON(w, 200, products)
@@ -75,7 +86,7 @@ func (s *Controller) Products(w http.ResponseWriter, r *http.Request) {
 func (s *Controller) SearchProducts(w http.ResponseWriter, r *http.Request) {
 	term := strings.TrimSpace(r.URL.Query().Get("q"))
 	if term == "" {
-		JSON(w, 200, map[string]any{"items": []any{}, "page": 1, "limit": 20, "has_more": false})
+		JSON(w, 200, map[string]any{"items": []any{}, "page": 1, "limit": 50, "has_more": false, "total_count": 0})
 		return
 	}
 
@@ -88,10 +99,36 @@ func (s *Controller) SearchProducts(w http.ResponseWriter, r *http.Request) {
 		limit = 20
 	}
 	offset := (page - 1) * limit
+	nameCodeOnly := r.URL.Query().Get("scope") == "name_code"
+	searchCondition := `p.product_name ILIKE $1 OR p.product_code ILIKE $1 OR p.product_no::text ILIKE $1 OR c.category_name ILIKE $1`
+	exactCondition := `LOWER(p.product_code)=LOWER($1) OR p.product_no::text=$1`
+	if nameCodeOnly {
+		searchCondition = `p.product_name ILIKE $1 OR p.product_code ILIKE $1`
+		exactCondition = `LOWER(p.product_code)=LOWER($1)`
+	}
+	exactRows, exactErr := s.DB.Query(r.Context(), productSelect+`
+WHERE COALESCE(p.is_active,true)=true
+  AND (`+exactCondition+`)
+ORDER BY p.created_at DESC
+LIMIT 1`, term)
+	if exactErr == nil {
+		exactProducts := scanProducts(exactRows)
+		exactRows.Close()
+		if len(exactProducts) > 0 {
+			exactProducts[0]["max_product_images"] = s.MaxProductImages
+			JSON(w, 200, map[string]any{"items": exactProducts, "page": 1, "limit": 1, "has_more": false, "total_count": 1})
+			return
+		}
+	}
+	var totalCount int
+	if err := s.DB.QueryRow(r.Context(), `SELECT COUNT(*) FROM products p LEFT JOIN categories c ON c.id=p.category_id
+WHERE COALESCE(p.is_active,true)=true AND (`+searchCondition+`)`, "%"+term+"%").Scan(&totalCount); err != nil {
+		Error(w, 500, "could not count products")
+		return
+	}
 
 	rows, err := s.DB.Query(r.Context(), productSelect+`
-WHERE COALESCE(p.is_active,true)=true
-  AND (p.product_name ILIKE $1 OR p.product_code ILIKE $1 OR c.category_name ILIKE $1)
+WHERE COALESCE(p.is_active,true)=true AND (`+searchCondition+`)
 ORDER BY p.created_at DESC
 LIMIT $2 OFFSET $3`, "%"+term+"%", limit+1, offset)
 	if err != nil {
@@ -109,10 +146,11 @@ LIMIT $2 OFFSET $3`, "%"+term+"%", limit+1, offset)
 		product["max_product_images"] = s.MaxProductImages
 	}
 	JSON(w, 200, map[string]any{
-		"items":    products,
-		"page":     page,
-		"limit":    limit,
-		"has_more": hasMore,
+		"items":       products,
+		"page":        page,
+		"limit":       limit,
+		"has_more":    hasMore,
+		"total_count": totalCount,
 	})
 }
 func (s *Controller) Product(w http.ResponseWriter, r *http.Request) {

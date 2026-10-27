@@ -11,6 +11,7 @@ import '../providers/wishlist_provider.dart';
 import '../widgets/heart_bubble.dart';
 import '../widgets/cart_feedback.dart';
 import 'cart_screen.dart';
+import '../widgets/liquid_glass.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final Product product;
@@ -72,7 +73,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       extendBody: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        foregroundColor: const Color(0xFF064E3B),
+        foregroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
@@ -377,9 +378,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         icon: const Icon(LucideIcons.message_circle),
                         label: const Text('WhatsApp Enquiry'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green.shade600,
+                          backgroundColor:
+                              Colors.green.shade700.withValues(alpha: .62),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 13),
+                          elevation: 0,
+                          side: BorderSide(
+                            color: Colors.white.withValues(alpha: .55),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                         ),
                       ),
                     ),
@@ -392,19 +401,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       ),
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        child: Container(
+        child: LiquidGlass(
+          tint: const Color(0xFF064E3B),
+          opacity: .82,
+          borderOpacity: .14,
+          borderRadius: BorderRadius.circular(26),
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF5F1E7),
-            borderRadius: BorderRadius.circular(26),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: .12),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
           child: Row(
             children: [
               Expanded(
@@ -428,7 +430,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           : null,
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        side: const BorderSide(color: Color(0xFFB7C9BD)),
+                        side: const BorderSide(
+                          color: Color(0xFF064E3B),
+                          width: 1.2,
+                        ),
                         backgroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16)),
@@ -464,6 +469,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16)),
+                    side: const BorderSide(
+                      color: Colors.white,
+                      width: 1.2,
+                    ),
                     elevation: 0,
                   ),
                   child: const Text('BUY NOW',

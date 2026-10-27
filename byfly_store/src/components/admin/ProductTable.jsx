@@ -1,7 +1,7 @@
 import { Pencil, Trash2, Package } from 'lucide-react'
 import { getImageUrl } from '../../lib/imageUrl'
 
-const ProductTable = ({ products, onEdit, onDelete }) => {
+const ProductTable = ({ products, loading, onEdit, onDelete }) => {
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden">
       <div className="overflow-x-auto">
@@ -33,6 +33,7 @@ const ProductTable = ({ products, onEdit, onDelete }) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
+            {loading && products.length === 0 && <tr><td colSpan={12} className="px-6 py-10 text-center text-sm text-slate-400">Loading products...</td></tr>}
             {products.map((product) => (
               <tr key={product.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4">
@@ -86,6 +87,7 @@ const ProductTable = ({ products, onEdit, onDelete }) => {
                 </td>
               </tr>
             ))}
+            {!loading && products.length === 0 && <tr><td colSpan={12} className="px-6 py-10 text-center text-sm text-slate-400">No products found.</td></tr>}
           </tbody>
         </table>
       </div>

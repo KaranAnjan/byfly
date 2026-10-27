@@ -17,6 +17,7 @@ import 'search_screen.dart';
 import '../models/product.dart';
 import '../models/category.dart';
 import '../core/api_client.dart';
+import '../widgets/liquid_glass.dart';
 
 // Retained for backwards-compatible category data handling.
 // ignore: unused_element
@@ -67,23 +68,42 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen>
+    with SingleTickerProviderStateMixin {
   static const _pageBackground = Color(0xFF064E3B);
   int _currentIndex = 0;
   String _searchTerm = '';
   String? _homeSelectedCategoryId;
+  late final AnimationController _pageTransitionController;
+  late final Animation<double> _pageOpacity;
+  late final Animation<Offset> _pageOffset;
   final GlobalKey<NavigatorState> _categoriesNavigatorKey =
       GlobalKey<NavigatorState>();
 
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
-      if (mounted) {
-        context.read<ProductProvider>().fetchCategories();
-        context.read<ProductProvider>().fetchProducts();
-      }
-    });
+    _pageTransitionController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 260),
+    );
+    final curve = CurvedAnimation(
+      parent: _pageTransitionController,
+      curve: Curves.easeOutCubic,
+    );
+    _pageOpacity = Tween<double>(begin: .72, end: 1).animate(curve);
+    _pageOffset = Tween<Offset>(
+      begin: const Offset(.035, 0),
+      end: Offset.zero,
+    ).animate(curve);
+    _pageTransitionController.value = 1;
+    context.read<ProductProvider>().fetchProducts();
+  }
+
+  @override
+  void dispose() {
+    _pageTransitionController.dispose();
+    super.dispose();
   }
 
   @override
@@ -111,51 +131,54 @@ class _HomeScreenState extends State<HomeScreen> {
         extendBody: true,
         backgroundColor: _pageBackground,
         appBar: null,
-        body: IndexedStack(
-          index: _currentIndex,
-          children: [
-            HomeContent(
-              searchTerm: _searchTerm,
-              selectedCategoryId: _homeSelectedCategoryId,
-              onSearchChanged: (value) => setState(() => _searchTerm = value),
-              onCategorySelected: (id) {
-                setState(() => _homeSelectedCategoryId = id);
-                context.read<ProductProvider>().fetchProducts(categoryId: id);
-              },
+        body: FadeTransition(
+          opacity: _pageOpacity,
+          child: SlideTransition(
+            position: _pageOffset,
+            child: IndexedStack(
+              index: _currentIndex,
+              children: [
+                HomeContent(
+                  searchTerm: _searchTerm,
+                  selectedCategoryId: _homeSelectedCategoryId,
+                  onSearchChanged: (value) =>
+                      setState(() => _searchTerm = value),
+                  onCategorySelected: (id) {
+                    setState(() => _homeSelectedCategoryId = id);
+                    context
+                        .read<ProductProvider>()
+                        .fetchProducts(categoryId: id);
+                  },
+                ),
+                CategoriesTabNavigator(
+                  navigatorKey: _categoriesNavigatorKey,
+                ),
+                const OrdersWishlistScreen(wishlistOnly: true),
+                CartScreen(onBack: () => setState(() => _currentIndex = 0)),
+                const ProfileScreen(),
+              ],
             ),
-            CategoriesTabNavigator(
-              navigatorKey: _categoriesNavigatorKey,
-            ),
-            const OrdersWishlistScreen(wishlistOnly: true),
-            CartScreen(onBack: () => setState(() => _currentIndex = 0)),
-            const ProfileScreen(),
-          ],
+          ),
         ),
         bottomNavigationBar: SafeArea(
           top: false,
           minimum: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          child: Container(
+          child: SizedBox(
             height: 72,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
-            decoration: BoxDecoration(
-              color: const Color(0xFF064E3B),
+            child: LiquidGlass(
               borderRadius: BorderRadius.circular(26),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: .12),
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                _floatingNavItem(0, LucideIcons.house, 'Home'),
-                _floatingNavItem(1, LucideIcons.layout_grid, 'Categories'),
-                _floatingNavItem(2, LucideIcons.heart, 'Wishlist'),
-                _floatingNavItem(3, LucideIcons.shopping_cart, 'Cart'),
-                _floatingNavItem(4, LucideIcons.user, 'Account'),
-              ],
+              opacity: .82,
+              borderOpacity: .12,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+              child: Row(
+                children: [
+                  _floatingNavItem(0, LucideIcons.house, 'Home'),
+                  _floatingNavItem(1, LucideIcons.layout_grid, 'Categories'),
+                  _floatingNavItem(2, LucideIcons.heart, 'Wishlist'),
+                  _floatingNavItem(3, LucideIcons.shopping_cart, 'Cart'),
+                  _floatingNavItem(4, LucideIcons.user, 'Account'),
+                ],
+              ),
             ),
           ),
         ),
@@ -171,9 +194,14 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: () {
           if (index == 0) {
             _homeSelectedCategoryId = null;
-            context.read<ProductProvider>().fetchProducts();
           }
-          setState(() => _currentIndex = index);
+          if (_currentIndex != index) {
+            if (index == 0) {
+              context.read<ProductProvider>().fetchProducts();
+            }
+            setState(() => _currentIndex = index);
+            _pageTransitionController.forward(from: 0);
+          }
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 220),
@@ -185,23 +213,28 @@ class _HomeScreenState extends State<HomeScreen> {
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(18),
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon,
-                  size: 21, color: selected ? Colors.white : Colors.white70),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  color: selected ? Colors.white : Colors.white70,
+          child: AnimatedScale(
+            scale: selected ? 1 : .94,
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutBack,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon,
+                    size: 21, color: selected ? Colors.white : Colors.white70),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    color: selected ? Colors.white : Colors.white70,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -231,7 +264,7 @@ class HomeContent extends StatelessWidget {
       onRefresh: () async {
         final products = context.read<ProductProvider>();
         await products.fetchCategories();
-        await products.fetchProducts();
+        await products.fetchProducts(force: true);
       },
       child: Container(
         color: cream,
@@ -543,13 +576,11 @@ class HomeContent extends StatelessWidget {
               height: 56,
               decoration: BoxDecoration(
                 color: isSelected
-                    ? Theme.of(context).colorScheme.primary
-                    : const Color(0xFFF5F1E7),
+                    ? const Color(0xFF0B6B4F)
+                    : const Color(0xFF064E3B),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isSelected
-                      ? Colors.white.withValues(alpha: .8)
-                      : Colors.white,
+                  color: Colors.white,
                   width: 1.2,
                 ),
                 boxShadow: [
@@ -564,7 +595,7 @@ class HomeContent extends StatelessWidget {
                 child: Icon(
                   _getCategoryIcon(name),
                   size: 22,
-                  color: isSelected ? Colors.white : const Color(0xFF31513E),
+                  color: Colors.white,
                 ),
               ),
             ),

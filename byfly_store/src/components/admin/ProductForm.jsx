@@ -7,19 +7,40 @@ import { Barcode, Save, X } from 'lucide-react'
 
 const fieldClass = 'mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-emerald-500'
 
+const discountFor = (mrp, price) => {
+  const mrpValue = Number(mrp), priceValue = Number(price)
+  if (!Number.isFinite(mrpValue) || mrpValue <= 0 || !Number.isFinite(priceValue) || priceValue > mrpValue) return ''
+  return Math.max(0, Math.min(100, ((mrpValue - priceValue) / mrpValue) * 100)).toFixed(2).replace(/\.00$/, '')
+}
+
 const ProductForm = ({ product, existingProducts = [], onSave, onCancel }) => {
   const { categories } = useCategories()
   const [loading, setLoading] = useState(false)
   const [pendingFiles, setPendingFiles] = useState([])
-  const [form, setForm] = useState({ product_name: '', category_id: '', product_code: '', description: '', images: [], cost: '', retail_stock: 0, wholesale_stock: 0, wholesale_price: '', min_order_qty: 1, retail_price: '', retail_mrp: '', wholesale_mrp: '' })
+  const [form, setForm] = useState({ product_name: '', category_id: '', product_code: '', description: '', images: [], cost: '', retail_stock: 0, wholesale_stock: 0, wholesale_price: '', min_order_qty: 1, retail_price: '', retail_mrp: '', retail_discount: '', wholesale_mrp: '', wholesale_discount: '' })
 
   useEffect(() => {
     if (!product) return
     setPendingFiles([])
-    setForm({ product_name: product.product_name || '', category_id: product.category_id || '', product_code: product.product_code || '', description: product.description || '', images: product.images || [], cost: product.cost ?? '', retail_stock: product.stock_by_channel?.retail ?? product.stock ?? 0, wholesale_stock: product.stock_by_channel?.wholesale ?? 0, wholesale_price: product.wholesale_price ?? '', min_order_qty: product.min_order_qty || 1, retail_price: product.price ?? product.retail_price ?? '', retail_mrp: product.mrp ?? product.retail_mrp ?? '', wholesale_mrp: product.wholesale_mrp ?? '' })
+    const retailPrice = product.price ?? product.retail_price ?? ''
+    const retailMrp = product.mrp ?? product.retail_mrp ?? ''
+    const wholesalePrice = product.wholesale_price ?? ''
+    const wholesaleMrp = product.wholesale_mrp ?? ''
+    setForm({ product_name: product.product_name || '', category_id: product.category_id || '', product_code: product.product_code || '', description: product.description || '', images: product.images || [], cost: product.cost ?? '', retail_stock: product.stock_by_channel?.retail ?? product.stock ?? 0, wholesale_stock: product.stock_by_channel?.wholesale ?? 0, wholesale_price: wholesalePrice, min_order_qty: product.min_order_qty || 1, retail_price: retailPrice, retail_mrp: retailMrp, retail_discount: discountFor(retailMrp, retailPrice), wholesale_mrp: wholesaleMrp, wholesale_discount: discountFor(wholesaleMrp, wholesalePrice) })
   }, [product])
 
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }))
+  const setPriceField = (channel, key, value) => setForm((current) => {
+    const next = { ...current, [`${channel}_${key}`]: value }
+    const discount = key === 'discount' ? value : next[`${channel}_discount`]
+    const mrp = key === 'mrp' ? value : next[`${channel}_mrp`]
+    if (discount !== '' && Number.isFinite(Number(discount)) && Number.isFinite(Number(mrp))) {
+      const safeDiscount = Math.max(0, Math.min(100, Number(discount)))
+      next[`${channel}_discount`] = String(safeDiscount)
+      next[`${channel}_price`] = (Number(mrp) * (1 - safeDiscount / 100)).toFixed(2)
+    }
+    return next
+  })
   const duplicateCode = Boolean(form.product_code.trim()) && existingProducts.some((item) => (
     item.id !== product?.id && String(item.product_code || '').trim().toLowerCase() === form.product_code.trim().toLowerCase()
   ))
@@ -83,9 +104,13 @@ const ProductForm = ({ product, existingProducts = [], onSave, onCancel }) => {
           <label className="text-sm font-medium text-gray-700">Cost (₹) *<input type="number" required min="0" step="0.01" value={form.cost} onChange={(e) => set('cost', e.target.value)} className={fieldClass} /></label>
         </div>
         <div className="flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-4"><ImageUploader productId={product?.id} images={form.images} legacyImage={product?.image_url || ''} maxImages={product?.max_product_images || 4} onImagesChange={(images) => set('images', images)} onPendingFilesChange={setPendingFiles} /></div>
+        {false && <>
         <section className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4 md:col-span-2"><h4 className="font-semibold text-emerald-900">Retail prices</h4><p className="mb-3 text-xs text-emerald-700">Shown to retail customers.</p><div className="grid grid-cols-1 gap-4 md:grid-cols-3"><label className="text-sm font-medium text-gray-700">Retail stock *<input type="number" required min="0" step="1" value={form.retail_stock} onChange={(e) => set('retail_stock', e.target.value)} className={fieldClass} /></label><label className="text-sm font-medium text-gray-700">Retail selling price (₹) *<input type="number" required min="0" step="0.01" value={form.retail_price} onChange={(e) => set('retail_price', e.target.value)} className={fieldClass} /></label><label className="text-sm font-medium text-gray-700">Retail MRP (₹) *<input type="number" required min="0" step="0.01" value={form.retail_mrp} onChange={(e) => set('retail_mrp', e.target.value)} className={fieldClass} /></label></div></section>
         <section className="rounded-xl border border-blue-100 bg-blue-50/50 p-4 md:col-span-2"><h4 className="font-semibold text-blue-900">Wholesale prices</h4><p className="mb-3 text-xs text-blue-700">Shown only to approved wholesale customers.</p><div className="grid grid-cols-1 gap-4 md:grid-cols-4"><label className="text-sm font-medium text-gray-700">Wholesale stock *<input type="number" required min="0" step="1" value={form.wholesale_stock} onChange={(e) => set('wholesale_stock', e.target.value)} className={fieldClass} /></label><label className="text-sm font-medium text-gray-700">Wholesale selling price (₹) *<input type="number" required min="0" step="0.01" value={form.wholesale_price} onChange={(e) => set('wholesale_price', e.target.value)} className={fieldClass} /></label><label className="text-sm font-medium text-gray-700">Wholesale MRP (₹) *<input type="number" required min="0" step="0.01" value={form.wholesale_mrp} onChange={(e) => set('wholesale_mrp', e.target.value)} className={fieldClass} /></label><label className="text-sm font-medium text-gray-700">Minimum order quantity *<input type="number" required min="1" step="1" value={form.min_order_qty} onChange={(e) => set('min_order_qty', e.target.value)} className={fieldClass} /></label></div></section>
+        </>}
       </div>
+        <section className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4 md:col-span-2"><h4 className="font-semibold text-emerald-900">Retail prices</h4><p className="mb-3 text-xs text-emerald-700">Enter MRP and an optional discount. Leave discount blank to enter the selling price manually.</p><div className="grid grid-cols-1 gap-4 md:grid-cols-4"><label className="text-sm font-medium text-gray-700">Retail stock *<input type="number" required min="0" step="1" value={form.retail_stock} onChange={(e) => set('retail_stock', e.target.value)} className={fieldClass} /></label><label className="text-sm font-medium text-gray-700">Retail MRP *<input type="number" required min="0" step="0.01" value={form.retail_mrp} onChange={(e) => setPriceField('retail', 'mrp', e.target.value)} className={fieldClass} /></label><label className="text-sm font-medium text-gray-700">Discount (%)<input type="number" min="0" max="100" step="0.01" value={form.retail_discount} onChange={(e) => setPriceField('retail', 'discount', e.target.value)} placeholder="Optional" className={`${fieldClass} max-w-[110px]`} /></label><label className="text-sm font-medium text-gray-700">Retail selling price *<input type="number" required min="0" step="0.01" value={form.retail_price} onChange={(e) => setPriceField('retail', 'price', e.target.value)} className={fieldClass} /></label></div></section>
+        <section className="rounded-xl border border-blue-100 bg-blue-50/50 p-4 md:col-span-2"><h4 className="font-semibold text-blue-900">Wholesale prices</h4><p className="mb-3 text-xs text-blue-700">Enter MRP and an optional discount. Leave discount blank to enter the selling price manually.</p><div className="grid grid-cols-1 gap-4 md:grid-cols-5"><label className="text-sm font-medium text-gray-700">Wholesale stock *<input type="number" required min="0" step="1" value={form.wholesale_stock} onChange={(e) => set('wholesale_stock', e.target.value)} className={fieldClass} /></label><label className="text-sm font-medium text-gray-700">Wholesale MRP *<input type="number" required min="0" step="0.01" value={form.wholesale_mrp} onChange={(e) => setPriceField('wholesale', 'mrp', e.target.value)} className={fieldClass} /></label><label className="text-sm font-medium text-gray-700">Discount (%)<input type="number" min="0" max="100" step="0.01" value={form.wholesale_discount} onChange={(e) => setPriceField('wholesale', 'discount', e.target.value)} placeholder="Optional" className={`${fieldClass} max-w-[110px]`} /></label><label className="text-sm font-medium text-gray-700">Wholesale selling price *<input type="number" required min="0" step="0.01" value={form.wholesale_price} onChange={(e) => setPriceField('wholesale', 'price', e.target.value)} className={fieldClass} /></label><label className="text-sm font-medium text-gray-700">Minimum order quantity *<input type="number" required min="1" step="1" value={form.min_order_qty} onChange={(e) => set('min_order_qty', e.target.value)} className={fieldClass} /></label></div></section>
       <div className="flex gap-3 pt-4"><button type="submit" disabled={loading} className="flex items-center gap-2 rounded-lg bg-emerald-600 px-6 py-2 text-white transition hover:bg-emerald-700 disabled:opacity-50"><Save className="h-4 w-4" />{loading ? 'Saving...' : 'Save Product'}</button><button type="button" onClick={onCancel} className="flex items-center gap-2 rounded-lg bg-gray-200 px-6 py-2 text-gray-700 hover:bg-gray-300"><X className="h-4 w-4" />Cancel</button></div>
     </form>
   </div>

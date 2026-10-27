@@ -11,6 +11,9 @@ class ProductProvider extends ChangeNotifier {
   bool _isLoadingMore = false;
   bool _hasMoreProducts = true;
   int _productPage = 0;
+  bool _hasLoadedProducts = false;
+  String? _activeCategoryId;
+  Future<void>? _categoriesRequest;
   String? _error;
 
   List<Product> get products => _products;
@@ -19,9 +22,22 @@ class ProductProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isLoadingMore => _isLoadingMore;
   bool get hasMoreProducts => _hasMoreProducts;
+  bool get hasLoadedProducts => _hasLoadedProducts;
   String? get error => _error;
 
   Future<void> fetchCategories() async {
+    if (_categories.isNotEmpty) return;
+    if (_categoriesRequest != null) return _categoriesRequest!;
+
+    _categoriesRequest = _fetchCategories();
+    try {
+      await _categoriesRequest;
+    } finally {
+      _categoriesRequest = null;
+    }
+  }
+
+  Future<void> _fetchCategories() async {
     try {
       final data = await ApiClient.getJson('/categories');
       _categories =
@@ -33,7 +49,12 @@ class ProductProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> fetchProducts({String? categoryId}) async {
+  Future<void> fetchProducts({String? categoryId, bool force = false}) async {
+    if (!force && _hasLoadedProducts && _activeCategoryId == categoryId) {
+      return;
+    }
+    if (_isLoading) return;
+
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -53,12 +74,15 @@ class ProductProvider extends ChangeNotifier {
       }
       _productPage = 1;
       _hasMoreProducts = data is Map ? data['has_more'] == true : false;
+      _activeCategoryId = categoryId;
+      _hasLoadedProducts = true;
       debugPrint('ByFly App: Fetched ${_products.length} products');
     } catch (e) {
       debugPrint('ByFly App Fetch Error: $e');
       _error = e.toString();
     } finally {
       _isLoading = false;
+      _hasLoadedProducts = true;
       notifyListeners();
     }
   }
