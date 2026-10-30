@@ -171,7 +171,7 @@ func (s *Controller) Product(w http.ResponseWriter, r *http.Request) {
 
 const productSelect = `SELECT p.id,p.product_no,p.product_name,p.product_code,p.description,
 COALESCE((SELECT pi.image_url FROM product_images pi WHERE pi.product_id=p.id ORDER BY pi.image_index LIMIT 1),'') AS image_url,
-p.category_id,c.category_name,pp.cost,pp.retail_price,pp.wholesale_price,pp.retail_mrp,pp.wholesale_mrp,pp.wholesale_min_order_qty,
+	p.category_id,c.category_name,p.expiry_date,pp.cost,pp.retail_price,pp.wholesale_price,pp.retail_mrp,pp.wholesale_mrp,pp.wholesale_min_order_qty,
 COALESCE(ps.retail_quantity,0),COALESCE(ps.wholesale_quantity,0),
 COALESCE((SELECT json_agg(json_build_object('id',pi.id,'url',pi.image_url,'image_index',pi.image_index) ORDER BY pi.image_index) FROM product_images pi WHERE pi.product_id=p.id),'[]'::json) AS images
 FROM products p LEFT JOIN categories c ON c.id=p.category_id LEFT JOIN product_prices pp ON pp.product_id=p.id LEFT JOIN product_stock ps ON ps.product_id=p.id`
@@ -184,16 +184,16 @@ func scanProducts(rows interface {
 	for rows.Next() {
 		var id, name, code string
 		var number int64
-		var desc, img, cat, catName any
+		var desc, img, cat, catName, expiryDate any
 		var cost, rp, wp, rm, wm any
 		var imagesJSON []byte
 		var min, rs, ws int
-		if rows.Scan(&id, &number, &name, &code, &desc, &img, &cat, &catName, &cost, &rp, &wp, &rm, &wm, &min, &rs, &ws, &imagesJSON) != nil {
+		if rows.Scan(&id, &number, &name, &code, &desc, &img, &cat, &catName, &expiryDate, &cost, &rp, &wp, &rm, &wm, &min, &rs, &ws, &imagesJSON) != nil {
 			continue
 		}
 		var images []map[string]any
 		_ = json.Unmarshal(imagesJSON, &images)
-		out = append(out, map[string]any{"id": id, "product_no": number, "product_name": name, "product_code": code, "description": desc, "image_url": img, "images": images, "category_id": cat, "categories": map[string]any{"category_name": catName}, "cost": cost, "retail_price": rp, "wholesale_price": wp, "retail_mrp": rm, "wholesale_mrp": wm, "wholesale_min_order_qty": min, "product_stock": map[string]int{"retail_quantity": rs, "wholesale_quantity": ws}, "stock": ws})
+		out = append(out, map[string]any{"id": id, "product_no": number, "product_name": name, "product_code": code, "description": desc, "image_url": img, "images": images, "category_id": cat, "categories": map[string]any{"category_name": catName}, "expiry_date": expiryDate, "cost": cost, "retail_price": rp, "wholesale_price": wp, "retail_mrp": rm, "wholesale_mrp": wm, "wholesale_min_order_qty": min, "product_stock": map[string]int{"retail_quantity": rs, "wholesale_quantity": ws}, "stock": ws})
 	}
 	return out
 }

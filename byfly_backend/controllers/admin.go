@@ -47,6 +47,7 @@ type productInput struct {
 	Description          *string `json:"description"`
 	ImageURL             string  `json:"image_url"`
 	CategoryID           string  `json:"category_id"`
+	ExpiryDate           *string `json:"expiry_date"`
 	Cost                 float64 `json:"cost"`
 	RetailPrice          float64 `json:"retail_price"`
 	RetailMRP            float64 `json:"retail_mrp"`
@@ -66,6 +67,17 @@ func (s *Controller) SaveProduct(w http.ResponseWriter, r *http.Request) {
 	if in.WholesaleMinOrderQty < 1 {
 		in.WholesaleMinOrderQty = 1
 	}
+	if in.ExpiryDate != nil && strings.TrimSpace(*in.ExpiryDate) == "" {
+		in.ExpiryDate = nil
+	}
+	if in.ExpiryDate != nil {
+		if _, err := time.Parse("2006-01-02", strings.TrimSpace(*in.ExpiryDate)); err != nil {
+			Error(w, 400, "expiry_date must be a valid date")
+			return
+		}
+		value := strings.TrimSpace(*in.ExpiryDate)
+		in.ExpiryDate = &value
+	}
 	tx, err := s.DB.Begin(r.Context())
 	if err != nil {
 		Error(w, 500, "could not start product save")
@@ -74,9 +86,9 @@ func (s *Controller) SaveProduct(w http.ResponseWriter, r *http.Request) {
 	defer tx.Rollback(r.Context())
 	var id string
 	if pid := chi.URLParam(r, "id"); pid != "" {
-		err = tx.QueryRow(r.Context(), `UPDATE products SET product_name=$1,product_code=$2,description=$3,image_url=$4,category_id=$5,updated_at=now() WHERE (id=$6 OR product_no::text=$6) RETURNING id`, in.ProductName, in.ProductCode, in.Description, in.ImageURL, in.CategoryID, pid).Scan(&id)
+		err = tx.QueryRow(r.Context(), `UPDATE products SET product_name=$1,product_code=$2,description=$3,image_url=$4,category_id=$5,expiry_date=$6,updated_at=now() WHERE (id=$7 OR product_no::text=$7) RETURNING id`, in.ProductName, in.ProductCode, in.Description, in.ImageURL, in.CategoryID, in.ExpiryDate, pid).Scan(&id)
 	} else {
-		err = tx.QueryRow(r.Context(), `INSERT INTO products(product_name,product_code,description,image_url,category_id) VALUES($1,$2,$3,$4,$5) RETURNING id`, in.ProductName, in.ProductCode, in.Description, in.ImageURL, in.CategoryID).Scan(&id)
+		err = tx.QueryRow(r.Context(), `INSERT INTO products(product_name,product_code,description,image_url,category_id,expiry_date) VALUES($1,$2,$3,$4,$5,$6) RETURNING id`, in.ProductName, in.ProductCode, in.Description, in.ImageURL, in.CategoryID, in.ExpiryDate).Scan(&id)
 	}
 	if err != nil {
 		var pgErr *pgconn.PgError

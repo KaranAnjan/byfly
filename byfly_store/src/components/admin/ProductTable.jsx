@@ -20,6 +20,7 @@ const ProductTable = ({ products, loading, onEdit, onDelete }) => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                 Category
               </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expiry</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cost</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Retail Price</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Retail MRP</th>
@@ -33,7 +34,7 @@ const ProductTable = ({ products, loading, onEdit, onDelete }) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {loading && products.length === 0 && <tr><td colSpan={12} className="px-6 py-10 text-center text-sm text-slate-400">Loading products...</td></tr>}
+            {loading && products.length === 0 && <tr><td colSpan={13} className="px-6 py-10 text-center text-sm text-slate-400">Loading products...</td></tr>}
             {products.map((product) => (
               <tr key={product.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4">
@@ -58,6 +59,7 @@ const ProductTable = ({ products, loading, onEdit, onDelete }) => {
                 <td className="px-6 py-4 text-gray-500">
                   {product.categories?.category_name}
                 </td>
+                <td className="px-6 py-4 text-gray-500">{product.expiry_date ? String(product.expiry_date).slice(0, 10) : '—'}</td>
                 <td className="px-6 py-4 font-semibold">{product.cost != null ? `Rs. ${product.cost}` : 'Not set'}</td>
                 <td className="px-6 py-4 font-semibold">{product.price != null ? `Rs. ${product.price}` : 'Not set'}</td>
                 <td className="px-6 py-4">{product.mrp != null ? `Rs. ${product.mrp}` : 'Not set'}</td>
@@ -87,7 +89,7 @@ const ProductTable = ({ products, loading, onEdit, onDelete }) => {
                 </td>
               </tr>
             ))}
-            {!loading && products.length === 0 && <tr><td colSpan={12} className="px-6 py-10 text-center text-sm text-slate-400">No products found.</td></tr>}
+            {!loading && products.length === 0 && <tr><td colSpan={13} className="px-6 py-10 text-center text-sm text-slate-400">No products found.</td></tr>}
           </tbody>
         </table>
       </div>

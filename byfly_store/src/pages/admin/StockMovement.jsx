@@ -49,7 +49,7 @@ const StockMovement = ({ mode }) => {
     if (nextRetail < 0 || nextWholesale < 0) return toast.error('Stock out quantity cannot exceed current stock.')
     setSaving(true)
     try {
-      await apiRequest(`/admin/products/${selected.id}`, { method: 'PUT', body: JSON.stringify({ product_name: selected.product_name, product_code: selected.product_code, category_id: selected.category_id, description: selected.description || null, image_url: selected.image_url || '', cost: Number(selected.cost || 0), retail_price: Number(selected.retail_price || 0), retail_mrp: Number(selected.retail_mrp ?? selected.mrp ?? 0), wholesale_price: Number(selected.wholesale_price || 0), wholesale_mrp: Number(selected.wholesale_mrp || 0), wholesale_min_order_qty: Number(selected.min_order_qty || 1), retail_stock: nextRetail, wholesale_stock: nextWholesale }) })
+      await apiRequest(`/admin/products/${selected.id}`, { method: 'PUT', body: JSON.stringify({ product_name: selected.product_name, product_code: selected.product_code, category_id: selected.category_id, description: selected.description || null, image_url: selected.image_url || '', expiry_date: selected.expiry_date || null, cost: Number(selected.cost || 0), retail_price: Number(selected.retail_price || 0), retail_mrp: Number(selected.retail_mrp ?? selected.mrp ?? 0), wholesale_price: Number(selected.wholesale_price || 0), wholesale_mrp: Number(selected.wholesale_mrp || 0), wholesale_min_order_qty: Number(selected.min_order_qty || 1), retail_stock: nextRetail, wholesale_stock: nextWholesale }) })
       toast.success(`${isStockIn ? 'Stock added' : 'Stock removed'} for ${selected.product_name}`)
       await refetch()
       clearProduct()

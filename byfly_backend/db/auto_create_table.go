@@ -43,9 +43,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS categories_category_no_idx ON categories(categ
 CREATE TABLE IF NOT EXISTS products (
   id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
   product_name text NOT NULL, product_code text NOT NULL UNIQUE, description text,
-  image_url text, category_id text REFERENCES categories(id) ON DELETE SET NULL,
+  image_url text, expiry_date date, category_id text REFERENCES categories(id) ON DELETE SET NULL,
   is_active boolean NOT NULL DEFAULT true, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now()
 );
+ALTER TABLE products ADD COLUMN IF NOT EXISTS expiry_date date;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS product_no bigint DEFAULT nextval('byfly_product_no_seq');
 WITH numbered AS (SELECT id,2000000000 + ROW_NUMBER() OVER (ORDER BY created_at,id) - 1 AS value FROM products)
 UPDATE products p SET product_no=n.value FROM numbered n WHERE p.id=n.id;

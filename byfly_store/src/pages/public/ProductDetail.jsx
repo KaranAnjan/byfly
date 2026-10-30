@@ -221,6 +221,13 @@ const ProductDetail = () => {
               </div>
             )}
 
+            {product.expiry_date && (
+              <div className="rounded-lg border border-amber-100 bg-amber-50 p-4 text-sm text-amber-900">
+                <span className="font-semibold">Expiry date:</span>{' '}
+                {new Date(`${String(product.expiry_date).slice(0, 10)}T00:00:00`).toLocaleDateString()}
+              </div>
+            )}
+
             {/* Divider */}
             <hr className="border-gray-200" />
 
