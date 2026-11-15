@@ -171,10 +171,10 @@ const ManageProducts = () => {
               )}
             </div>
             <input ref={importInput} type="file" accept=".csv,text/csv" onChange={importProducts} className="hidden" />
-            <button onClick={() => importInput.current?.click()} className="flex items-center gap-2 border border-blue-200 bg-blue-50 text-blue-800 px-3 py-2 rounded-lg hover:bg-blue-100 transition"><Upload className="h-4 w-4" />Import Excel CSV</button>
-            <button onClick={() => downloadCsv('product-import-template.csv', ['product_code', 'product_name', 'description', 'category', 'category_id', 'expiry_date', 'image_url', 'cost', 'retail_price', 'retail_mrp', 'wholesale_price', 'wholesale_mrp', 'wholesale_min_order_qty', 'retail_stock', 'wholesale_stock'], [])} className="flex items-center gap-2 border border-gray-200 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-50 transition"><FileSpreadsheet className="h-4 w-4" />Template</button>
-            <button onClick={exportProducts} className="flex items-center gap-2 border border-gray-200 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-50 transition"><Download className="h-4 w-4" />Export Products</button>
-            <button onClick={() => setShowForm(true)} className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition"><Plus className="h-4 w-4" />Add Product</button>
+            <button onClick={() => importInput.current?.click()} className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3.5 py-2.5 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-100"><Upload className="h-4 w-4" />Import CSV</button>
+            <button onClick={() => downloadCsv('product-import-template.csv', ['product_code', 'product_name', 'description', 'category', 'category_id', 'expiry_date', 'image_url', 'cost', 'retail_price', 'retail_mrp', 'wholesale_price', 'wholesale_mrp', 'wholesale_min_order_qty', 'retail_stock', 'wholesale_stock'], [])} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50"><FileSpreadsheet className="h-4 w-4" />Template</button>
+            <button onClick={exportProducts} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50"><Download className="h-4 w-4" />Export</button>
+            <button onClick={() => setShowForm(true)} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-200 transition hover:from-violet-700 hover:to-indigo-700"><Plus className="h-4 w-4" />Add product</button>
           </div>
         )}
       </div>

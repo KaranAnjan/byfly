@@ -3,9 +3,10 @@ import { apiRequest } from '../../lib/apiClient'
 import { useCategories } from '../../hooks/useCategories'
 import ImageUploader from './ImageUploader'
 import toast from 'react-hot-toast'
-import { Barcode, CalendarDays, ChevronLeft, ChevronRight, Printer, Save, X } from 'lucide-react'
+import { Barcode, Building2, CalendarDays, ChevronLeft, ChevronRight, PackagePlus, Printer, Save, Tag, X } from 'lucide-react'
 
-const fieldClass = 'mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-emerald-500'
+const fieldClass = 'w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-violet-400 focus:ring-4 focus:ring-violet-100'
+const labelClass = 'flex flex-col gap-1.5 text-sm font-medium text-slate-700'
 
 const discountFor = (mrp, price) => {
   const mrpValue = Number(mrp), priceValue = Number(price)
@@ -65,17 +66,17 @@ const ExpiryDatePicker = ({ value, onChange }) => {
   }, [open])
 
   return <div ref={pickerRef} className="relative">
-    <button type="button" onClick={openPicker} className={`${fieldClass} flex items-center justify-between text-left ${value ? 'text-gray-900' : 'text-gray-400'}`}>
+    <button type="button" onClick={openPicker} className={`${fieldClass} flex items-center justify-between text-left ${value ? 'text-slate-900' : 'text-slate-400'}`}>
       <span>{displayDate(value)}</span>
-      <CalendarDays className="h-5 w-5 text-emerald-600" />
+      <CalendarDays className="h-5 w-5 text-violet-500" />
     </button>
-    {open && <div role="dialog" aria-label="Select expiry date" className="absolute left-0 top-full z-50 mt-2 w-[min(20rem,calc(100vw-2rem))] rounded-xl bg-white p-5 shadow-2xl ring-1 ring-slate-200">
+    {open && <div role="dialog" aria-label="Select expiry date" className="absolute left-0 top-full z-50 mt-2 w-[min(20rem,calc(100vw-2rem))] rounded-2xl bg-white p-5 shadow-2xl ring-1 ring-slate-200">
         <div className="mb-4 flex items-center justify-between">
-          <button type="button" aria-label="Previous month" onClick={() => setViewDate(new Date(year, month - 1, 1))} className="rounded-lg p-2 text-gray-600 hover:bg-gray-100"><ChevronLeft className="h-5 w-5" /></button>
-          <h4 className="font-semibold text-gray-900">{monthLabel}</h4>
-          <button type="button" aria-label="Next month" onClick={() => setViewDate(new Date(year, month + 1, 1))} className="rounded-lg p-2 text-gray-600 hover:bg-gray-100"><ChevronRight className="h-5 w-5" /></button>
+          <button type="button" aria-label="Previous month" onClick={() => setViewDate(new Date(year, month - 1, 1))} className="rounded-lg p-2 text-slate-600 transition hover:bg-slate-100"><ChevronLeft className="h-5 w-5" /></button>
+          <h4 className="font-semibold text-slate-900">{monthLabel}</h4>
+          <button type="button" aria-label="Next month" onClick={() => setViewDate(new Date(year, month + 1, 1))} className="rounded-lg p-2 text-slate-600 transition hover:bg-slate-100"><ChevronRight className="h-5 w-5" /></button>
         </div>
-        <div className="mb-2 grid grid-cols-7 text-center text-xs font-semibold text-gray-500">{['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => <span key={day}>{day}</span>)}</div>
+        <div className="mb-2 grid grid-cols-7 text-center text-xs font-semibold text-slate-400">{['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => <span key={day}>{day}</span>)}</div>
         <div className="grid grid-cols-7 gap-1">
           {days.map((day, index) => {
             if (!day) return <span key={`empty-${index}`} className="h-9" />
@@ -83,12 +84,12 @@ const ExpiryDatePicker = ({ value, onChange }) => {
             const dateValue = dateInputValue(date)
             const isSelected = selectedDate && dateValue === value
             const isToday = dateValue === today
-            return <button key={dateValue} type="button" onClick={() => { onChange(dateValue); setOpen(false) }} className={`h-9 rounded-lg text-sm transition ${isSelected ? 'bg-emerald-600 font-semibold text-white' : isToday ? 'border border-emerald-500 text-emerald-700' : 'text-gray-700 hover:bg-emerald-50'}`}>{day}</button>
+            return <button key={dateValue} type="button" onClick={() => { onChange(dateValue); setOpen(false) }} className={`h-9 rounded-lg text-sm transition ${isSelected ? 'bg-violet-600 font-semibold text-white' : isToday ? 'border border-violet-500 text-violet-700' : 'text-slate-700 hover:bg-violet-50'}`}>{day}</button>
           })}
         </div>
-        <div className="mt-4 flex justify-between border-t border-gray-100 pt-3">
-          <button type="button" onClick={() => { onChange(''); setOpen(false) }} className="text-sm font-medium text-gray-500 hover:text-gray-700">Clear</button>
-          <button type="button" onClick={() => { onChange(today); setOpen(false) }} className="text-sm font-medium text-emerald-700 hover:text-emerald-800">Today</button>
+        <div className="mt-4 flex justify-between border-t border-slate-100 pt-3">
+          <button type="button" onClick={() => { onChange(''); setOpen(false) }} className="text-sm font-medium text-slate-500 transition hover:text-slate-700">Clear</button>
+          <button type="button" onClick={() => { onChange(today); setOpen(false) }} className="text-sm font-medium text-violet-700 transition hover:text-violet-800">Today</button>
         </div>
       </div>}
   </div>
@@ -179,47 +180,106 @@ const ProductForm = ({ product, existingProducts = [], onSave, onCancel }) => {
     } catch (error) { toast.error(error.message) } finally { setLoading(false) }
   }
 
-  return <div className="rounded-xl bg-white p-6 shadow-md">
-    <div className="mb-4"><h3 className="text-lg font-semibold">{product ? `Edit Product ${product.product_no || ''}` : 'Add New Product'}</h3></div>
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="space-y-4">
-          <label className="text-sm font-medium text-gray-700">
-            <span className="flex items-center gap-2">Product code * <Barcode className="h-4 w-4 text-emerald-600" /></span>
-            <span className="mt-1 block text-xs font-normal text-gray-500">Scan with a barcode scanner or type the code manually.</span>
-            <span className="relative block">
-              <Barcode className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-              <input
-                required
-                autoFocus={!product}
-                inputMode="text"
-                autoComplete="off"
-                placeholder="Scan or enter product code"
-                value={form.product_code}
-                onChange={(e) => set('product_code', e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault() }}
-                className={`${fieldClass} pl-10 ${duplicateCode ? 'border-red-500 ring-2 ring-red-100' : ''}`}
-              />
-            </span>
-            {duplicateCode && <span className="mt-1 block text-xs font-medium text-red-600">This product code already exists. Please use a unique code.</span>}
-          </label>
-          <label className="text-sm font-medium text-gray-700">Product name *<input required value={form.product_name} onChange={(e) => set('product_name', e.target.value)} className={fieldClass} /></label>
-          <label className="text-sm font-medium text-gray-700">Category *<select required value={form.category_id} onChange={(e) => set('category_id', e.target.value)} className={fieldClass}><option value="">Select Category</option>{categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.category_name}</option>)}</select></label>
-          <label className="text-sm font-medium text-gray-700">Expiry date (optional)<ExpiryDatePicker value={form.expiry_date} onChange={(value) => set('expiry_date', value)} /></label>
-          <label className="text-sm font-medium text-gray-700">Description (optional)<textarea rows="3" value={form.description} onChange={(e) => set('description', e.target.value)} className={`${fieldClass} resize-y`} /></label>
-          <label className="text-sm font-medium text-gray-700">Cost (₹) *<input type="number" required min="0" step="0.01" value={form.cost} onChange={(e) => set('cost', e.target.value)} className={fieldClass} /></label>
+  return (
+    <div className="rounded-2xl bg-white shadow-[0_18px_50px_-24px_rgba(31,39,84,0.45)] ring-1 ring-slate-200/70">
+      <div className="flex items-center gap-4 rounded-t-2xl border-b border-slate-100 bg-gradient-to-r from-violet-50 via-white to-white px-6 py-5">
+        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-200">
+          <PackagePlus className="h-5 w-5" />
         </div>
-        <div className="flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-4"><ImageUploader productId={product?.id} images={form.images} legacyImage={product?.image_url || ''} maxImages={product?.max_product_images || 4} onImagesChange={(images) => set('images', images)} onPendingFilesChange={setPendingFiles} /></div>
-        {false && <>
-        <section className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4 md:col-span-2"><h4 className="font-semibold text-emerald-900">Retail prices</h4><p className="mb-3 text-xs text-emerald-700">Shown to retail customers.</p><div className="grid grid-cols-1 gap-4 md:grid-cols-3"><label className="text-sm font-medium text-gray-700">Retail stock *<input type="number" required min="0" step="1" value={form.retail_stock} onChange={(e) => set('retail_stock', e.target.value)} className={fieldClass} /></label><label className="text-sm font-medium text-gray-700">Retail selling price (₹) *<input type="number" required min="0" step="0.01" value={form.retail_price} onChange={(e) => set('retail_price', e.target.value)} className={fieldClass} /></label><label className="text-sm font-medium text-gray-700">Retail MRP (₹) *<input type="number" required min="0" step="0.01" value={form.retail_mrp} onChange={(e) => set('retail_mrp', e.target.value)} className={fieldClass} /></label></div></section>
-        <section className="rounded-xl border border-blue-100 bg-blue-50/50 p-4 md:col-span-2"><h4 className="font-semibold text-blue-900">Wholesale prices</h4><p className="mb-3 text-xs text-blue-700">Shown only to approved wholesale customers.</p><div className="grid grid-cols-1 gap-4 md:grid-cols-4"><label className="text-sm font-medium text-gray-700">Wholesale stock *<input type="number" required min="0" step="1" value={form.wholesale_stock} onChange={(e) => set('wholesale_stock', e.target.value)} className={fieldClass} /></label><label className="text-sm font-medium text-gray-700">Wholesale selling price (₹) *<input type="number" required min="0" step="0.01" value={form.wholesale_price} onChange={(e) => set('wholesale_price', e.target.value)} className={fieldClass} /></label><label className="text-sm font-medium text-gray-700">Wholesale MRP (₹) *<input type="number" required min="0" step="0.01" value={form.wholesale_mrp} onChange={(e) => set('wholesale_mrp', e.target.value)} className={fieldClass} /></label><label className="text-sm font-medium text-gray-700">Minimum order quantity *<input type="number" required min="1" step="1" value={form.min_order_qty} onChange={(e) => set('min_order_qty', e.target.value)} className={fieldClass} /></label></div></section>
-        </>}
+        <div className="min-w-0">
+          <h3 className="truncate text-lg font-bold tracking-tight text-slate-900">{product ? `Edit product ${product.product_no || ''}` : 'Add new product'}</h3>
+          <p className="mt-0.5 text-xs text-slate-500">{product ? 'Update the catalogue details, pricing and stock.' : 'Fill in the details to add a new product to your catalogue.'}</p>
+        </div>
       </div>
-        <section className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4 md:col-span-2"><h4 className="font-semibold text-emerald-900">Retail prices</h4><p className="mb-3 text-xs text-emerald-700">Enter MRP and either the selling price or discount; the other fields update automatically.</p><div className="grid grid-cols-1 gap-4 md:grid-cols-4"><label className="flex flex-col text-sm font-medium text-gray-700">Retail stock *<input type="number" required min="0" step="1" value={form.retail_stock} onChange={(e) => set('retail_stock', e.target.value)} className={fieldClass} /></label><label className="flex flex-col text-sm font-medium text-gray-700">Retail MRP *<input type="number" required min="0" step="0.01" value={form.retail_mrp} onChange={(e) => setPriceField('retail', 'mrp', e.target.value)} className={fieldClass} /></label><label className="flex flex-col text-sm font-medium text-gray-700">Discount (%)<input type="number" min="0" max="100" step="0.01" value={form.retail_discount} onChange={(e) => setPriceField('retail', 'discount', e.target.value)} placeholder="Optional" className={fieldClass} /></label><label className="flex flex-col text-sm font-medium text-gray-700">Retail selling price *<input type="number" required min="0" step="0.01" value={form.retail_price} onChange={(e) => setPriceField('retail', 'price', e.target.value)} className={fieldClass} /></label></div></section>
-        <section className="rounded-xl border border-blue-100 bg-blue-50/50 p-4 md:col-span-2"><h4 className="font-semibold text-blue-900">Wholesale prices</h4><p className="mb-3 text-xs text-blue-700">Enter MRP and either the selling price or discount; the other fields update automatically.</p><div className="grid grid-cols-1 gap-4 md:grid-cols-5"><label className="flex flex-col text-sm font-medium text-gray-700">Wholesale stock *<input type="number" required min="0" step="1" value={form.wholesale_stock} onChange={(e) => set('wholesale_stock', e.target.value)} className={fieldClass} /></label><label className="flex flex-col text-sm font-medium text-gray-700">Wholesale MRP *<input type="number" required min="0" step="0.01" value={form.wholesale_mrp} onChange={(e) => setPriceField('wholesale', 'mrp', e.target.value)} className={fieldClass} /></label><label className="flex flex-col text-sm font-medium text-gray-700">Discount (%)<input type="number" min="0" max="100" step="0.01" value={form.wholesale_discount} onChange={(e) => setPriceField('wholesale', 'discount', e.target.value)} placeholder="Optional" className={fieldClass} /></label><label className="flex flex-col text-sm font-medium text-gray-700">Wholesale selling price *<input type="number" required min="0" step="0.01" value={form.wholesale_price} onChange={(e) => setPriceField('wholesale', 'price', e.target.value)} className={fieldClass} /></label><label className="flex flex-col text-sm font-medium text-gray-700">Minimum order quantity *<input type="number" required min="1" step="1" value={form.min_order_qty} onChange={(e) => set('min_order_qty', e.target.value)} className={fieldClass} /></label></div></section>
-      <div className="flex flex-wrap gap-3 pt-4"><button type="submit" disabled={loading} className="flex items-center gap-2 rounded-lg bg-emerald-600 px-6 py-2 text-white transition hover:bg-emerald-700 disabled:opacity-50"><Save className="h-4 w-4" />{loading ? 'Saving...' : 'Save Product'}</button>{!product && form.product_code.trim() && <button type="button" onClick={() => printProductCode(form.product_code.trim(), form.product_name.trim() || 'Product')} className="flex items-center gap-2 rounded-lg border border-purple-200 bg-purple-50 px-5 py-2 font-medium text-purple-700 transition hover:bg-purple-100" title="Print the custom product code"><Printer className="h-4 w-4" />Print code</button>}<button type="button" onClick={onCancel} className="flex items-center gap-2 rounded-lg bg-gray-200 px-6 py-2 text-gray-700 hover:bg-gray-300"><X className="h-4 w-4" />Cancel</button></div>
-    </form>
-  </div>
+
+      <form onSubmit={handleSubmit} className="p-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+          <section className="rounded-2xl border border-slate-100 bg-slate-50/70 p-5">
+            <div className="mb-4">
+              <h4 className="text-sm font-semibold text-slate-900">Product details</h4>
+              <p className="mt-0.5 text-xs text-slate-500">Basic information used across the store.</p>
+            </div>
+            <div className="space-y-4">
+              <label className={labelClass}>
+                <span className="flex items-center gap-1.5">Product code <span className="text-rose-500">*</span><Barcode className="h-3.5 w-3.5 text-violet-500" /></span>
+                <span className="text-xs font-normal text-slate-400">Scan with a barcode scanner or type the code manually.</span>
+                <span className="relative block">
+                  <Barcode className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    required
+                    autoFocus={!product}
+                    inputMode="text"
+                    autoComplete="off"
+                    placeholder="Scan or enter product code"
+                    value={form.product_code}
+                    onChange={(e) => set('product_code', e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault() }}
+                    className={`${fieldClass} pl-10 ${duplicateCode ? 'border-rose-300 ring-4 ring-rose-100' : ''}`}
+                  />
+                </span>
+                {duplicateCode && <span className="text-xs font-medium text-rose-600">This product code already exists. Please use a unique code.</span>}
+              </label>
+              <label className={labelClass}><span>Product name <span className="text-rose-500">*</span></span><input required value={form.product_name} onChange={(e) => set('product_name', e.target.value)} placeholder="e.g. Gold plated necklace" className={fieldClass} /></label>
+              <label className={labelClass}><span>Category <span className="text-rose-500">*</span></span><select required value={form.category_id} onChange={(e) => set('category_id', e.target.value)} className={fieldClass}><option value="">Select category</option>{categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.category_name}</option>)}</select></label>
+              <label className={labelClass}><span>Expiry date <span className="text-xs font-normal text-slate-400">(optional)</span></span><ExpiryDatePicker value={form.expiry_date} onChange={(value) => set('expiry_date', value)} /></label>
+              <label className={labelClass}><span>Description <span className="text-xs font-normal text-slate-400">(optional)</span></span><textarea rows="3" value={form.description} onChange={(e) => set('description', e.target.value)} placeholder="Short description shown to customers" className={`${fieldClass} resize-y`} /></label>
+              <label className={labelClass}><span>Cost (₹) <span className="text-rose-500">*</span></span><input type="number" required min="0" step="0.01" value={form.cost} onChange={(e) => set('cost', e.target.value)} placeholder="0.00" className={fieldClass} /></label>
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-slate-100 bg-slate-50/70 p-5">
+            <div className="mb-4">
+              <h4 className="text-sm font-semibold text-slate-900">Product images</h4>
+              <p className="mt-0.5 text-xs text-slate-500">Upload clear photos. The first image is used as the cover.</p>
+            </div>
+            <div className="rounded-xl border border-dashed border-slate-200 bg-white p-3">
+              <ImageUploader productId={product?.id} images={form.images} legacyImage={product?.image_url || ''} maxImages={product?.max_product_images || 4} onImagesChange={(images) => set('images', images)} onPendingFilesChange={setPendingFiles} />
+            </div>
+          </section>
+        </div>
+
+        <section className="mt-6 rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50/80 via-white to-white p-5">
+          <div className="mb-4 flex items-center gap-3">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-100 text-emerald-700"><Tag className="h-4 w-4" /></div>
+            <div className="min-w-0">
+              <h4 className="text-sm font-semibold text-emerald-900">Retail pricing</h4>
+              <p className="text-xs text-emerald-700/80">Enter MRP and either the selling price or discount — the other fields update automatically.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <label className={labelClass}><span>Retail stock <span className="text-rose-500">*</span></span><input type="number" required min="0" step="1" value={form.retail_stock} onChange={(e) => set('retail_stock', e.target.value)} className={fieldClass} /></label>
+            <label className={labelClass}><span>Retail MRP (₹) <span className="text-rose-500">*</span></span><input type="number" required min="0" step="0.01" value={form.retail_mrp} onChange={(e) => setPriceField('retail', 'mrp', e.target.value)} className={fieldClass} /></label>
+            <label className={labelClass}><span>Discount (%)</span><input type="number" min="0" max="100" step="0.01" value={form.retail_discount} onChange={(e) => setPriceField('retail', 'discount', e.target.value)} placeholder="Optional" className={fieldClass} /></label>
+            <label className={labelClass}><span>Retail selling price (₹) <span className="text-rose-500">*</span></span><input type="number" required min="0" step="0.01" value={form.retail_price} onChange={(e) => setPriceField('retail', 'price', e.target.value)} className={fieldClass} /></label>
+          </div>
+        </section>
+
+        <section className="mt-6 rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50/80 via-white to-white p-5">
+          <div className="mb-4 flex items-center gap-3">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-blue-100 text-blue-700"><Building2 className="h-4 w-4" /></div>
+            <div className="min-w-0">
+              <h4 className="text-sm font-semibold text-blue-900">Wholesale pricing</h4>
+              <p className="text-xs text-blue-700/80">Shown only to approved wholesale customers. MRP and selling price sync with the discount.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+            <label className={labelClass}><span>Wholesale stock <span className="text-rose-500">*</span></span><input type="number" required min="0" step="1" value={form.wholesale_stock} onChange={(e) => set('wholesale_stock', e.target.value)} className={fieldClass} /></label>
+            <label className={labelClass}><span>Wholesale MRP (₹) <span className="text-rose-500">*</span></span><input type="number" required min="0" step="0.01" value={form.wholesale_mrp} onChange={(e) => setPriceField('wholesale', 'mrp', e.target.value)} className={fieldClass} /></label>
+            <label className={labelClass}><span>Discount (%)</span><input type="number" min="0" max="100" step="0.01" value={form.wholesale_discount} onChange={(e) => setPriceField('wholesale', 'discount', e.target.value)} placeholder="Optional" className={fieldClass} /></label>
+            <label className={labelClass}><span>Wholesale selling price (₹) <span className="text-rose-500">*</span></span><input type="number" required min="0" step="0.01" value={form.wholesale_price} onChange={(e) => setPriceField('wholesale', 'price', e.target.value)} className={fieldClass} /></label>
+            <label className={labelClass}><span>Minimum order qty <span className="text-rose-500">*</span></span><input type="number" required min="1" step="1" value={form.min_order_qty} onChange={(e) => set('min_order_qty', e.target.value)} className={fieldClass} /></label>
+          </div>
+        </section>
+
+        <div className="sticky bottom-0 z-10 -mx-6 -mb-6 mt-6 flex flex-wrap items-center gap-3 rounded-b-2xl border-t border-slate-100 bg-white/90 px-6 py-4 backdrop-blur">
+          <button type="submit" disabled={loading} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-200 transition hover:from-emerald-700 hover:to-teal-700 disabled:cursor-not-allowed disabled:opacity-60"><Save className="h-4 w-4" />{loading ? 'Saving…' : 'Save product'}</button>
+          {!product && form.product_code.trim() && <button type="button" onClick={() => printProductCode(form.product_code.trim(), form.product_name.trim() || 'Product')} className="inline-flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-5 py-2.5 text-sm font-semibold text-violet-700 transition hover:bg-violet-100" title="Print the custom product code"><Printer className="h-4 w-4" />Print code</button>}
+          <button type="button" onClick={onCancel} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"><X className="h-4 w-4" />Cancel</button>
+          <span className="ml-auto hidden text-xs text-slate-400 sm:block">Fields marked <span className="text-rose-500">*</span> are required</span>
+        </div>
+      </form>
+    </div>
+  )
 }
 
 export default ProductForm

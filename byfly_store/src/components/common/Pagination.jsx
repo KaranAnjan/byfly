@@ -13,14 +13,14 @@ const Pagination = ({ page, totalPages, onPageChange, totalCount, pageSize, item
   const lastItem = Math.min(page * pageSize, totalCount)
   const buttonClass = 'grid h-8 min-w-8 place-items-center rounded-lg border border-slate-200 px-2 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40'
 
-  return <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 shadow-sm">
+  return <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200/70 bg-white px-4 py-3 shadow-sm">
     <p className="text-sm text-slate-500">Showing {firstItem}–{lastItem} of {totalCount} {itemLabel}</p>
     <nav aria-label={`${itemLabel} pagination`} className="flex items-center gap-1">
       <button type="button" className={`${buttonClass} px-3`} disabled={page === 1} onClick={() => onPageChange(1)}>First</button>
       <button type="button" className={buttonClass} aria-label="Previous page" disabled={page === 1} onClick={() => onPageChange(page - 1)}><ChevronLeft className="h-4 w-4" /></button>
       {getPageNumbers(page, totalPages).map((number, index) => number.toString().startsWith('ellipsis')
         ? <span key={`${number}-${index}`} className="grid h-8 min-w-8 place-items-center text-xs text-slate-500">…</span>
-        : <button type="button" key={number} aria-current={number === page ? 'page' : undefined} onClick={() => onPageChange(number)} className={`${buttonClass} ${number === page ? 'border-[#173d29] bg-[#173d29] text-white hover:bg-[#173d29]' : ''}`}>{number}</button>)}
+        : <button type="button" key={number} aria-current={number === page ? 'page' : undefined} onClick={() => onPageChange(number)} className={`${buttonClass} ${number === page ? 'border-violet-600 bg-violet-600 text-white hover:border-violet-600 hover:bg-violet-600' : ''}`}>{number}</button>)}
       <button type="button" className={buttonClass} aria-label="Next page" disabled={page === totalPages} onClick={() => onPageChange(page + 1)}><ChevronRight className="h-4 w-4" /></button>
       <button type="button" className={`${buttonClass} px-3`} disabled={page === totalPages} onClick={() => onPageChange(totalPages)}>Last</button>
     </nav>

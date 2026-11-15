@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Search, ScanBarcode, ArrowDownToLine, ArrowUpFromLine, Package, Save } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useProducts } from '../../hooks/useProducts'
@@ -8,7 +8,9 @@ import { getImageUrl } from '../../lib/imageUrl'
 
 const StockMovement = ({ mode }) => {
   const isStockIn = mode === 'in'
-  const [code, setCode] = useState('')
+  const [searchParams] = useSearchParams()
+  const codeParam = searchParams.get('code') || ''
+  const [code, setCode] = useState(codeParam)
   const [selected, setSelected] = useState(null)
   const [retailQuantity, setRetailQuantity] = useState('')
   const [wholesaleQuantity, setWholesaleQuantity] = useState('')
@@ -26,6 +28,13 @@ const StockMovement = ({ mode }) => {
     if (exactMatch) chooseProduct(exactMatch)
   }, [normalizedCode, products, loading, selected])
 
+  useEffect(() => {
+    if (!codeParam) return
+    setSelected(null)
+    setCode(codeParam)
+    setRetailQuantity('')
+    setWholesaleQuantity('')
+  }, [codeParam])
   const chooseProduct = (product) => {
     setSelected(product)
     setCode(product.product_code || String(product.product_no || ''))
