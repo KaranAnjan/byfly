@@ -11,6 +11,7 @@ import (
 const SchemaSQL = `
 -- ByFly PostgreSQL bootstrap. Safe to run repeatedly from the API startup.
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE SEQUENCE IF NOT EXISTS byfly_numeric_id_seq START 1000000000;
 CREATE SEQUENCE IF NOT EXISTS byfly_category_no_seq START 1000000000;
 CREATE SEQUENCE IF NOT EXISTS byfly_product_no_seq START 2000000000;

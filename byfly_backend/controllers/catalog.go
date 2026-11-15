@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-chi/chi/v5"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -100,38 +101,81 @@ func (s *Controller) SearchProducts(w http.ResponseWriter, r *http.Request) {
 	}
 	offset := (page - 1) * limit
 	nameCodeOnly := r.URL.Query().Get("scope") == "name_code"
-	searchCondition := `p.product_name ILIKE $1 OR p.product_code ILIKE $1 OR p.product_no::text ILIKE $1 OR c.category_name ILIKE $1`
-	exactCondition := `LOWER(p.product_code)=LOWER($1) OR p.product_no::text=$1`
-	if nameCodeOnly {
-		searchCondition = `p.product_name ILIKE $1 OR p.product_code ILIKE $1`
-		exactCondition = `LOWER(p.product_code)=LOWER($1)`
-	}
-	exactRows, exactErr := s.DB.Query(r.Context(), productSelect+`
-WHERE COALESCE(p.is_active,true)=true
-  AND (`+exactCondition+`)
-ORDER BY p.created_at DESC
-LIMIT 1`, term)
-	if exactErr == nil {
-		exactProducts := scanProducts(exactRows)
-		exactRows.Close()
-		if len(exactProducts) > 0 {
-			exactProducts[0]["max_product_images"] = s.MaxProductImages
-			JSON(w, 200, map[string]any{"items": exactProducts, "page": 1, "limit": 1, "has_more": false, "total_count": 1})
-			return
+	// Search the complete phrase as well as each meaningful word. This makes
+	// suggestions useful for inputs such as "gold chain" and partial scans,
+	// instead of requiring the whole value to match one database field.
+	searchArgs := []any{term, "%" + term + "%"}
+	searchParts := []string{}
+	substringMatch := func(placeholder string) string {
+		if nameCodeOnly {
+			return `p.product_name ILIKE ` + placeholder + ` OR p.product_code ILIKE ` + placeholder
 		}
+		return `p.product_name ILIKE ` + placeholder + ` OR p.product_code ILIKE ` + placeholder + ` OR p.product_no::text ILIKE ` + placeholder + ` OR c.category_name ILIKE ` + placeholder
 	}
+	// Fuzzy matching tolerates typos such as "vasline" for "vaseline". The
+	// threshold was chosen so real typos match while unrelated products don't.
+	fuzzyMatch := func(placeholder string) string {
+		parts := []string{
+			`word_similarity(LOWER(` + placeholder + `), LOWER(p.product_name)) >= 0.45`,
+			`word_similarity(LOWER(` + placeholder + `), LOWER(p.product_code)) >= 0.45`,
+		}
+		if !nameCodeOnly {
+			parts = append(parts, `word_similarity(LOWER(`+placeholder+`), LOWER(COALESCE(c.category_name,''))) >= 0.45`)
+		}
+		return strings.Join(parts, " OR ")
+	}
+	searchParts = append(searchParts, substringMatch("$2"))
+	if len([]rune(term)) >= 3 {
+		searchParts = append(searchParts, fuzzyMatch("$1"))
+	}
+	for _, word := range strings.Fields(term) {
+		if len([]rune(word)) < 2 {
+			continue
+		}
+		searchArgs = append(searchArgs, "%"+word+"%")
+		placeholder := fmt.Sprintf("$%d", len(searchArgs))
+		part := substringMatch(placeholder)
+		if len([]rune(word)) >= 3 {
+			searchArgs = append(searchArgs, word)
+			part += ` OR ` + fuzzyMatch(fmt.Sprintf("$%d", len(searchArgs)))
+		}
+		searchParts = append(searchParts, part)
+	}
+	searchCondition := "(" + strings.Join(searchParts, ") OR (") + ")"
+	// Lower rank is better. Exact values still win, but the rest of the
+	// suggestions are ordered by prefix, field relevance, and name length.
+	rank := `CASE
+		WHEN LOWER(p.product_code)=LOWER($1) OR p.product_no::text=$1 THEN 0
+		WHEN LOWER(p.product_code) LIKE LOWER($1)||'%' THEN 1
+		WHEN LOWER(p.product_name) LIKE LOWER($1)||'%' THEN 2
+		WHEN LOWER(p.product_code) LIKE '%'||LOWER($1)||'%' THEN 3
+		WHEN LOWER(p.product_name) LIKE '%'||LOWER($1)||'%' THEN 4
+		WHEN LOWER(COALESCE(c.category_name,'')) LIKE '%'||LOWER($1)||'%' THEN 5
+		ELSE 6 END`
+	// Among equally relevant matches, prefer the closest fuzzy match so typos
+	// such as "vasline" surface "vaseline" products first.
+	matchScore := `GREATEST(
+		word_similarity(LOWER($1), LOWER(p.product_name)),
+		word_similarity(LOWER($1), LOWER(p.product_code)),
+		word_similarity(LOWER($1), LOWER(COALESCE(c.category_name,'')))
+	)`
 	var totalCount int
 	if err := s.DB.QueryRow(r.Context(), `SELECT COUNT(*) FROM products p LEFT JOIN categories c ON c.id=p.category_id
-WHERE COALESCE(p.is_active,true)=true AND (`+searchCondition+`)`, "%"+term+"%").Scan(&totalCount); err != nil {
+WHERE COALESCE(p.is_active,true)=true AND $1::text IS NOT NULL AND (`+searchCondition+`)`, searchArgs...).Scan(&totalCount); err != nil {
+		log.Printf("product search count failed for %q: %v", term, err)
 		Error(w, 500, "could not count products")
 		return
 	}
 
+	searchArgs = append(searchArgs, limit+1, offset)
+	limitPlaceholder := len(searchArgs) - 1
+	offsetPlaceholder := len(searchArgs)
 	rows, err := s.DB.Query(r.Context(), productSelect+`
 WHERE COALESCE(p.is_active,true)=true AND (`+searchCondition+`)
-ORDER BY p.created_at DESC
-LIMIT $2 OFFSET $3`, "%"+term+"%", limit+1, offset)
+ORDER BY `+rank+`, `+matchScore+` DESC, LENGTH(p.product_name), LOWER(p.product_name), p.created_at DESC
+LIMIT $`+strconv.Itoa(limitPlaceholder)+` OFFSET $`+strconv.Itoa(offsetPlaceholder), searchArgs...)
 	if err != nil {
+		log.Printf("product search query failed for %q: %v", term, err)
 		Error(w, 500, "could not search products")
 		return
 	}

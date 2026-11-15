@@ -9,7 +9,7 @@ import ProductTable from '../../components/admin/ProductTable'
 import Loading from '../../components/common/Loading'
 import Pagination from '../../components/common/Pagination'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Download, FileSpreadsheet, Plus, Search, Upload } from 'lucide-react'
+import { ArrowLeft, Download, FileSpreadsheet, Plus, Search, Upload, X } from 'lucide-react'
 
 const ManageProducts = () => {
   const PAGE_SIZE = 25
@@ -17,7 +17,23 @@ const ManageProducts = () => {
   const { categories } = useCategories()
   const [showForm, setShowForm] = useState(false)
   const [search, setSearch] = useState('')
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [searchFocused, setSearchFocused] = useState(false)
+  const suggestionRef = useRef(null)
   const { products, loading, refetch, totalCount } = useProducts(undefined, search, { page, limit: PAGE_SIZE })
+  const suggestions = search.trim() ? products.slice(0, 8) : []
+  const searchExpanded = searchFocused || Boolean(search.trim())
+
+  useEffect(() => {
+    const handleClick = (event) => {
+      if (suggestionRef.current && !suggestionRef.current.contains(event.target)) {
+        setShowSuggestions(false)
+        setSearchFocused(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
   const [searchParams] = useSearchParams()
   const [editingProduct, setEditingProduct] = useState(null)
   const [routeLoading, setRouteLoading] = useState(false)
@@ -132,10 +148,28 @@ const ManageProducts = () => {
   return (
     <div className="px-5 pb-8 pt-8 sm:px-8 sm:pt-8">
       <div className="flex flex-wrap gap-3 justify-between items-center mb-6">
-        <div className="flex items-center gap-3">{showForm && <button type="button" onClick={handleBackToProducts} className="rounded-lg p-2 text-gray-600 hover:bg-gray-200" aria-label="Back to products"><ArrowLeft className="h-5 w-5" /></button>}<h1 className="text-2xl font-bold text-gray-900">{productNo ? `Edit Product ${productNo}` : 'Manage Products'}</h1></div>
+        <div className="flex min-w-0 items-center gap-3">{showForm && <button type="button" onClick={handleBackToProducts} className="rounded-lg p-2 text-gray-600 hover:bg-gray-200" aria-label="Back to products"><ArrowLeft className="h-5 w-5" /></button>}<h1 className={`truncate text-2xl font-bold text-gray-900 transition-all duration-300 ${searchExpanded ? 'max-w-0 -translate-x-2 opacity-0' : 'max-w-[24rem] opacity-100'}`}>{productNo ? `Edit Product ${productNo}` : 'Manage Products'}</h1></div>
         {!showForm && (
           <div className="flex flex-wrap gap-2">
-            <div className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search product..." className="w-52 rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100" /></div>
+            <div ref={suggestionRef} className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input value={search} onFocus={() => { setSearchFocused(true); setShowSuggestions(true) }} onChange={(event) => { setSearch(event.target.value); setShowSuggestions(true) }} placeholder="Search product..." className={`rounded-lg border border-slate-300 py-2 pl-9 text-sm outline-none transition-[width] duration-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 ${search ? 'pr-9' : 'pr-3'} ${searchExpanded ? 'w-72 sm:w-80 lg:w-96' : 'w-52'}`} />
+              {search && (
+                <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { setSearch(''); setShowSuggestions(false) }} className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" aria-label="Clear search"><X className="h-4 w-4" /></button>
+              )}
+              {showSuggestions && search.trim() && (
+                <div className="absolute left-0 top-full z-40 mt-1 max-h-80 w-full min-w-full overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-xl">
+                  {loading && suggestions.length === 0 && <div className="px-3 py-2 text-xs text-slate-400">Searching...</div>}
+                  {!loading && suggestions.length === 0 && <div className="px-3 py-2 text-xs text-slate-400">No products found.</div>}
+                  {suggestions.map((product) => (
+                    <button key={product.id} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { setSearch(product.product_name); setShowSuggestions(false) }} className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-slate-50">
+                      <span className="truncate text-slate-700">{product.product_name}</span>
+                      <span className="flex-shrink-0 font-mono text-[10px] text-slate-400">{product.product_code}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <input ref={importInput} type="file" accept=".csv,text/csv" onChange={importProducts} className="hidden" />
             <button onClick={() => importInput.current?.click()} className="flex items-center gap-2 border border-blue-200 bg-blue-50 text-blue-800 px-3 py-2 rounded-lg hover:bg-blue-100 transition"><Upload className="h-4 w-4" />Import Excel CSV</button>
             <button onClick={() => downloadCsv('product-import-template.csv', ['product_code', 'product_name', 'description', 'category', 'category_id', 'expiry_date', 'image_url', 'cost', 'retail_price', 'retail_mrp', 'wholesale_price', 'wholesale_mrp', 'wholesale_min_order_qty', 'retail_stock', 'wholesale_stock'], [])} className="flex items-center gap-2 border border-gray-200 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-50 transition"><FileSpreadsheet className="h-4 w-4" />Template</button>

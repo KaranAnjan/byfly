@@ -98,7 +98,7 @@ const ProductForm = ({ product, existingProducts = [], onSave, onCancel }) => {
   const { categories } = useCategories()
   const [loading, setLoading] = useState(false)
   const [pendingFiles, setPendingFiles] = useState([])
-  const [form, setForm] = useState({ product_name: '', category_id: '', product_code: '', description: '', expiry_date: '', images: [], cost: '', retail_stock: 0, wholesale_stock: 0, wholesale_price: '', min_order_qty: 1, retail_price: '', retail_mrp: '', retail_discount: '', wholesale_mrp: '', wholesale_discount: '' })
+  const [form, setForm] = useState({ product_name: '', category_id: '', product_code: '', description: '', expiry_date: '', images: [], cost: '', retail_stock: 0, wholesale_stock: 0, wholesale_price: '', min_order_qty: 1, retail_price: '', retail_mrp: '', retail_discount: '0', wholesale_mrp: '', wholesale_discount: '0' })
 
   useEffect(() => {
     if (!product) return
@@ -107,18 +107,42 @@ const ProductForm = ({ product, existingProducts = [], onSave, onCancel }) => {
     const retailMrp = product.mrp ?? product.retail_mrp ?? ''
     const wholesalePrice = product.wholesale_price ?? ''
     const wholesaleMrp = product.wholesale_mrp ?? ''
-    setForm({ product_name: product.product_name || '', category_id: product.category_id || '', product_code: product.product_code || '', description: product.description || '', expiry_date: product.expiry_date ? String(product.expiry_date).slice(0, 10) : '', images: product.images || [], cost: product.cost ?? '', retail_stock: product.stock_by_channel?.retail ?? product.stock ?? 0, wholesale_stock: product.stock_by_channel?.wholesale ?? 0, wholesale_price: wholesalePrice, min_order_qty: product.min_order_qty || 1, retail_price: retailPrice, retail_mrp: retailMrp, retail_discount: discountFor(retailMrp, retailPrice), wholesale_mrp: wholesaleMrp, wholesale_discount: discountFor(wholesaleMrp, wholesalePrice) })
+    setForm({ product_name: product.product_name || '', category_id: product.category_id || '', product_code: product.product_code || '', description: product.description || '', expiry_date: product.expiry_date ? String(product.expiry_date).slice(0, 10) : '', images: product.images || [], cost: product.cost ?? '', retail_stock: product.stock_by_channel?.retail ?? product.stock ?? 0, wholesale_stock: product.stock_by_channel?.wholesale ?? 0, wholesale_price: wholesalePrice, min_order_qty: product.min_order_qty || 1, retail_price: retailPrice, retail_mrp: retailMrp, retail_discount: discountFor(retailMrp, retailPrice) || '0', wholesale_mrp: wholesaleMrp, wholesale_discount: discountFor(wholesaleMrp, wholesalePrice) || '0' })
   }, [product])
 
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }))
   const setPriceField = (channel, key, value) => setForm((current) => {
     const next = { ...current, [`${channel}_${key}`]: value }
-    const discount = key === 'discount' ? value : next[`${channel}_discount`]
-    const mrp = key === 'mrp' ? value : next[`${channel}_mrp`]
-    if (discount !== '' && Number.isFinite(Number(discount)) && Number.isFinite(Number(mrp))) {
-      const safeDiscount = Math.max(0, Math.min(100, Number(discount)))
-      next[`${channel}_discount`] = String(safeDiscount)
-      next[`${channel}_price`] = (Number(mrp) * (1 - safeDiscount / 100)).toFixed(2)
+    const discountKey = `${channel}_discount`
+    const priceKey = `${channel}_price`
+    const mrpKey = `${channel}_mrp`
+    const discount = key === 'discount' ? value : next[discountKey]
+    const mrp = key === 'mrp' ? value : next[mrpKey]
+    const price = key === 'price' ? value : next[priceKey]
+    const hasValue = (input) => String(input ?? '').trim() !== ''
+    const mrpNumber = Number(mrp)
+    const priceNumber = Number(price)
+    const discountNumber = Number(discount)
+    const validMrp = hasValue(mrp) && Number.isFinite(mrpNumber) && mrpNumber > 0
+
+    if (key === 'price') {
+      // Selling price is authoritative: always recompute the percentage.
+      next[discountKey] = hasValue(price) && validMrp && Number.isFinite(priceNumber)
+        ? (discountFor(mrp, price) || '0')
+        : '0'
+    } else if (key === 'discount') {
+      if (hasValue(discount) && validMrp && Number.isFinite(discountNumber)) {
+        const safeDiscount = Math.max(0, Math.min(100, discountNumber))
+        next[discountKey] = String(safeDiscount)
+        next[priceKey] = (mrpNumber * (1 - safeDiscount / 100)).toFixed(2)
+      }
+    } else if (key === 'mrp') {
+      if (hasValue(price) && validMrp) {
+        // Keep the entered selling price and update the percentage from it.
+        next[discountKey] = discountFor(mrp, price) || '0'
+      } else if (hasValue(discount) && discountNumber > 0 && validMrp) {
+        next[priceKey] = (mrpNumber * (1 - Math.max(0, Math.min(100, discountNumber)) / 100)).toFixed(2)
+      }
     }
     return next
   })
@@ -191,8 +215,8 @@ const ProductForm = ({ product, existingProducts = [], onSave, onCancel }) => {
         <section className="rounded-xl border border-blue-100 bg-blue-50/50 p-4 md:col-span-2"><h4 className="font-semibold text-blue-900">Wholesale prices</h4><p className="mb-3 text-xs text-blue-700">Shown only to approved wholesale customers.</p><div className="grid grid-cols-1 gap-4 md:grid-cols-4"><label className="text-sm font-medium text-gray-700">Wholesale stock *<input type="number" required min="0" step="1" value={form.wholesale_stock} onChange={(e) => set('wholesale_stock', e.target.value)} className={fieldClass} /></label><label className="text-sm font-medium text-gray-700">Wholesale selling price (₹) *<input type="number" required min="0" step="0.01" value={form.wholesale_price} onChange={(e) => set('wholesale_price', e.target.value)} className={fieldClass} /></label><label className="text-sm font-medium text-gray-700">Wholesale MRP (₹) *<input type="number" required min="0" step="0.01" value={form.wholesale_mrp} onChange={(e) => set('wholesale_mrp', e.target.value)} className={fieldClass} /></label><label className="text-sm font-medium text-gray-700">Minimum order quantity *<input type="number" required min="1" step="1" value={form.min_order_qty} onChange={(e) => set('min_order_qty', e.target.value)} className={fieldClass} /></label></div></section>
         </>}
       </div>
-        <section className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4 md:col-span-2"><h4 className="font-semibold text-emerald-900">Retail prices</h4><p className="mb-3 text-xs text-emerald-700">Enter MRP and an optional discount. Leave discount blank to enter the selling price manually.</p><div className="grid grid-cols-1 gap-4 md:grid-cols-4"><label className="flex flex-col text-sm font-medium text-gray-700">Retail stock *<input type="number" required min="0" step="1" value={form.retail_stock} onChange={(e) => set('retail_stock', e.target.value)} className={fieldClass} /></label><label className="flex flex-col text-sm font-medium text-gray-700">Retail MRP *<input type="number" required min="0" step="0.01" value={form.retail_mrp} onChange={(e) => setPriceField('retail', 'mrp', e.target.value)} className={fieldClass} /></label><label className="flex flex-col text-sm font-medium text-gray-700">Discount (%)<input type="number" min="0" max="100" step="0.01" value={form.retail_discount} onChange={(e) => setPriceField('retail', 'discount', e.target.value)} placeholder="Optional" className={fieldClass} /></label><label className="flex flex-col text-sm font-medium text-gray-700">Retail selling price *<input type="number" required min="0" step="0.01" value={form.retail_price} onChange={(e) => setPriceField('retail', 'price', e.target.value)} className={fieldClass} /></label></div></section>
-        <section className="rounded-xl border border-blue-100 bg-blue-50/50 p-4 md:col-span-2"><h4 className="font-semibold text-blue-900">Wholesale prices</h4><p className="mb-3 text-xs text-blue-700">Enter MRP and an optional discount. Leave discount blank to enter the selling price manually.</p><div className="grid grid-cols-1 gap-4 md:grid-cols-5"><label className="flex flex-col text-sm font-medium text-gray-700">Wholesale stock *<input type="number" required min="0" step="1" value={form.wholesale_stock} onChange={(e) => set('wholesale_stock', e.target.value)} className={fieldClass} /></label><label className="flex flex-col text-sm font-medium text-gray-700">Wholesale MRP *<input type="number" required min="0" step="0.01" value={form.wholesale_mrp} onChange={(e) => setPriceField('wholesale', 'mrp', e.target.value)} className={fieldClass} /></label><label className="flex flex-col text-sm font-medium text-gray-700">Discount (%)<input type="number" min="0" max="100" step="0.01" value={form.wholesale_discount} onChange={(e) => setPriceField('wholesale', 'discount', e.target.value)} placeholder="Optional" className={fieldClass} /></label><label className="flex flex-col text-sm font-medium text-gray-700">Wholesale selling price *<input type="number" required min="0" step="0.01" value={form.wholesale_price} onChange={(e) => setPriceField('wholesale', 'price', e.target.value)} className={fieldClass} /></label><label className="flex flex-col text-sm font-medium text-gray-700">Minimum order quantity *<input type="number" required min="1" step="1" value={form.min_order_qty} onChange={(e) => set('min_order_qty', e.target.value)} className={fieldClass} /></label></div></section>
+        <section className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4 md:col-span-2"><h4 className="font-semibold text-emerald-900">Retail prices</h4><p className="mb-3 text-xs text-emerald-700">Enter MRP and either the selling price or discount; the other fields update automatically.</p><div className="grid grid-cols-1 gap-4 md:grid-cols-4"><label className="flex flex-col text-sm font-medium text-gray-700">Retail stock *<input type="number" required min="0" step="1" value={form.retail_stock} onChange={(e) => set('retail_stock', e.target.value)} className={fieldClass} /></label><label className="flex flex-col text-sm font-medium text-gray-700">Retail MRP *<input type="number" required min="0" step="0.01" value={form.retail_mrp} onChange={(e) => setPriceField('retail', 'mrp', e.target.value)} className={fieldClass} /></label><label className="flex flex-col text-sm font-medium text-gray-700">Discount (%)<input type="number" min="0" max="100" step="0.01" value={form.retail_discount} onChange={(e) => setPriceField('retail', 'discount', e.target.value)} placeholder="Optional" className={fieldClass} /></label><label className="flex flex-col text-sm font-medium text-gray-700">Retail selling price *<input type="number" required min="0" step="0.01" value={form.retail_price} onChange={(e) => setPriceField('retail', 'price', e.target.value)} className={fieldClass} /></label></div></section>
+        <section className="rounded-xl border border-blue-100 bg-blue-50/50 p-4 md:col-span-2"><h4 className="font-semibold text-blue-900">Wholesale prices</h4><p className="mb-3 text-xs text-blue-700">Enter MRP and either the selling price or discount; the other fields update automatically.</p><div className="grid grid-cols-1 gap-4 md:grid-cols-5"><label className="flex flex-col text-sm font-medium text-gray-700">Wholesale stock *<input type="number" required min="0" step="1" value={form.wholesale_stock} onChange={(e) => set('wholesale_stock', e.target.value)} className={fieldClass} /></label><label className="flex flex-col text-sm font-medium text-gray-700">Wholesale MRP *<input type="number" required min="0" step="0.01" value={form.wholesale_mrp} onChange={(e) => setPriceField('wholesale', 'mrp', e.target.value)} className={fieldClass} /></label><label className="flex flex-col text-sm font-medium text-gray-700">Discount (%)<input type="number" min="0" max="100" step="0.01" value={form.wholesale_discount} onChange={(e) => setPriceField('wholesale', 'discount', e.target.value)} placeholder="Optional" className={fieldClass} /></label><label className="flex flex-col text-sm font-medium text-gray-700">Wholesale selling price *<input type="number" required min="0" step="0.01" value={form.wholesale_price} onChange={(e) => setPriceField('wholesale', 'price', e.target.value)} className={fieldClass} /></label><label className="flex flex-col text-sm font-medium text-gray-700">Minimum order quantity *<input type="number" required min="1" step="1" value={form.min_order_qty} onChange={(e) => set('min_order_qty', e.target.value)} className={fieldClass} /></label></div></section>
       <div className="flex flex-wrap gap-3 pt-4"><button type="submit" disabled={loading} className="flex items-center gap-2 rounded-lg bg-emerald-600 px-6 py-2 text-white transition hover:bg-emerald-700 disabled:opacity-50"><Save className="h-4 w-4" />{loading ? 'Saving...' : 'Save Product'}</button>{!product && form.product_code.trim() && <button type="button" onClick={() => printProductCode(form.product_code.trim(), form.product_name.trim() || 'Product')} className="flex items-center gap-2 rounded-lg border border-purple-200 bg-purple-50 px-5 py-2 font-medium text-purple-700 transition hover:bg-purple-100" title="Print the custom product code"><Printer className="h-4 w-4" />Print code</button>}<button type="button" onClick={onCancel} className="flex items-center gap-2 rounded-lg bg-gray-200 px-6 py-2 text-gray-700 hover:bg-gray-300"><X className="h-4 w-4" />Cancel</button></div>
     </form>
   </div>
