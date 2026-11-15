@@ -1,14 +1,20 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useCategories } from '../../hooks/useCategories'
 import { apiRequest } from '../../lib/apiClient'
 import CategoryForm from '../../components/admin/CategoryForm'
 import Loading from '../../components/common/Loading'
+import Pagination from '../../components/common/Pagination'
 import toast from 'react-hot-toast'
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
 
 const ManageCategories = () => {
   const { categories, loading, refetch } = useCategories()
   const [showForm, setShowForm] = useState(false)
+  const [page, setPage] = useState(1)
+  const PAGE_SIZE = 10
+  const totalPages = Math.max(1, Math.ceil(categories.length / PAGE_SIZE))
+  const visibleCategories = categories.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  useEffect(() => { if (page > totalPages) setPage(totalPages) }, [page, totalPages])
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this category? Products in this category will need reassignment.')) return
@@ -76,7 +82,7 @@ const ManageCategories = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {categories.map((cat) => (
+              {visibleCategories.map((cat) => (
                 <tr key={cat.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 text-gray-500">{cat.id}</td>
                   <td className="px-6 py-4 font-medium text-gray-900">
@@ -94,6 +100,7 @@ const ManageCategories = () => {
               ))}
             </tbody>
           </table>
+          <Pagination page={page} totalPages={totalPages} totalCount={categories.length} pageSize={PAGE_SIZE} itemLabel="categories" onPageChange={setPage} />
         </div>
       )}
     </div>

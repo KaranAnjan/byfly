@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiRequest } from '../../lib/apiClient'
 import { Search, Check } from 'lucide-react'
+import Pagination from '../../components/common/Pagination'
 import toast from 'react-hot-toast'
 
 const STATUSES = ['pending', 'confirmed', 'shipped', 'out_for_delivery', 'delivered', 'cancelled']
@@ -12,6 +13,8 @@ const ManageDelivery = () => {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [draftStatus, setDraftStatus] = useState({})
+  const [page, setPage] = useState(1)
+  const PAGE_SIZE = 10
 
   useEffect(() => { fetchOrders() }, [])
 
@@ -46,6 +49,10 @@ const ManageDelivery = () => {
     (o.customer_name || '').toLowerCase().includes(search.toLowerCase()) ||
     (o.customer_phone || '').includes(search)
   )
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const visibleOrders = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  useEffect(() => { setPage(1) }, [search])
+  useEffect(() => { if (page > totalPages) setPage(totalPages) }, [page, totalPages])
 
   if (loading) {
     return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-emerald-600 border-t-transparent rounded-full" /></div>
@@ -77,7 +84,7 @@ const ManageDelivery = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {filtered.map((order) => {
+            {visibleOrders.map((order) => {
               const currentStatus = order.delivery_status || 'pending'
               const selectedStatus = draftStatus[order.id] ?? currentStatus
               const isChanged = selectedStatus !== currentStatus
@@ -141,6 +148,7 @@ const ManageDelivery = () => {
           </tbody>
         </table>
       </div>
+      <Pagination page={page} totalPages={totalPages} totalCount={filtered.length} pageSize={PAGE_SIZE} itemLabel="orders" onPageChange={setPage} />
     </div>
   )
 }

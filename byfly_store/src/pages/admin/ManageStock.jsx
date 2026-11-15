@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useProducts } from '../../hooks/useProducts'
 import StockUpdate from '../../components/admin/StockUpdate'
 import Loading from '../../components/common/Loading'
+import Pagination from '../../components/common/Pagination'
 import { Package, Search } from 'lucide-react'
 import { Download } from 'lucide-react'
 import { getImageUrl } from '../../lib/imageUrl'
@@ -77,7 +78,7 @@ const ManageStock = () => {
           </tbody>
         </table>
       </div>
-      {totalCount > 0 && <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 shadow-sm"><p className="text-sm text-slate-500">Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, totalCount)} of {totalCount} products</p><div className="flex items-center gap-1"><button type="button" disabled={page === 1} onClick={() => setPage((value) => value - 1)} className="rounded-lg border px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-40">Previous</button>{Array.from({ length: totalPages }, (_, index) => index + 1).map((number) => <button type="button" key={number} onClick={() => setPage(number)} className={`h-8 min-w-8 rounded-lg px-2 text-sm ${number === page ? 'bg-purple-600 text-white' : 'border hover:bg-purple-50'}`}>{number}</button>)}<button type="button" disabled={page === totalPages} onClick={() => setPage((value) => value + 1)} className="rounded-lg border px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-40">Next</button></div></div>}
+      <Pagination page={page} totalPages={totalPages} totalCount={totalCount} pageSize={PAGE_SIZE} itemLabel="products" onPageChange={setPage} />
     </div>
   )
 }
