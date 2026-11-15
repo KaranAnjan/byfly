@@ -3,10 +3,15 @@ import { apiRequest } from '../../lib/apiClient'
 import { useCategories } from '../../hooks/useCategories'
 import ImageUploader from './ImageUploader'
 import toast from 'react-hot-toast'
+import BarcodeLabelPreview from './BarcodeLabelPreview'
+import { loadLabelSettings, printProductCode, saveLabelSettings } from '../../lib/printProductCode'
 import { Barcode, Building2, CalendarDays, ChevronLeft, ChevronRight, PackagePlus, Printer, Save, Tag, X } from 'lucide-react'
 
-const fieldClass = 'w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-violet-400 focus:ring-4 focus:ring-violet-100'
 const labelClass = 'flex flex-col gap-1.5 text-sm font-medium text-slate-700'
+const fieldClass = 'w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-violet-400 focus:ring-4 focus:ring-violet-100'
+const qtyFieldClass = `${fieldClass} max-w-[7rem]`
+const priceFieldClass = `${fieldClass} max-w-[9rem]`
+const pricingLabelClass = `${labelClass} justify-end [&>span]:whitespace-nowrap`
 
 const discountFor = (mrp, price) => {
   const mrpValue = Number(mrp), priceValue = Number(price)
@@ -26,18 +31,6 @@ const displayDate = (value) => {
   return new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${value}T00:00:00`))
 }
 
-const printProductCode = (code, productName = 'Product') => {
-  const printWindow = window.open('', '_blank', 'width=520,height=360')
-  if (!printWindow) {
-    toast.error('Please allow pop-ups to print the product code.')
-    return
-  }
-  const safeCode = code.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]))
-  const safeName = productName.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]))
-  printWindow.document.write(`<!doctype html><html><head><title>Print product code ${safeCode}</title><style>body{margin:0;display:grid;min-height:100vh;place-items:center;font-family:Arial,sans-serif;color:#111827}.label{text-align:center;padding:32px;border:1px solid #d1d5db;border-radius:12px;min-width:280px}.name{font-size:16px;margin-bottom:18px}.code{font-family:monospace;font-size:30px;font-weight:700;letter-spacing:2px;word-break:break-all}@media print{.label{border:0}}</style></head><body><div class="label"><div class="name">${safeName}</div><div class="code">${safeCode}</div></div><script>window.onload=function(){window.print();window.onafterprint=function(){window.close()}}</script></body></html>`)
-  printWindow.document.close()
-}
-
 const ExpiryDatePicker = ({ value, onChange }) => {
   const [open, setOpen] = useState(false)
   const pickerRef = useRef(null)
@@ -52,6 +45,10 @@ const ExpiryDatePicker = ({ value, onChange }) => {
   const days = Array.from({ length: 42 }, (_, index) => index < firstDay || index >= firstDay + daysInMonth ? null : index - firstDay + 1)
 
   const openPicker = () => {
+    if (open) {
+      setOpen(false)
+      return
+    }
     setViewDate(value ? new Date(`${value}T00:00:00`) : new Date())
     setOpen(true)
   }
@@ -100,6 +97,7 @@ const ProductForm = ({ product, existingProducts = [], onSave, onCancel }) => {
   const [loading, setLoading] = useState(false)
   const [pendingFiles, setPendingFiles] = useState([])
   const [form, setForm] = useState({ product_name: '', category_id: '', product_code: '', description: '', expiry_date: '', images: [], cost: '', retail_stock: 0, wholesale_stock: 0, wholesale_price: '', min_order_qty: 1, retail_price: '', retail_mrp: '', retail_discount: '0', wholesale_mrp: '', wholesale_discount: '0' })
+  const [labelSettings, setLabelSettings] = useState(loadLabelSettings)
 
   useEffect(() => {
     if (!product) return
@@ -112,6 +110,11 @@ const ProductForm = ({ product, existingProducts = [], onSave, onCancel }) => {
   }, [product])
 
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }))
+  const setLabelSetting = (key, value) => setLabelSettings((current) => {
+    const next = { ...current, [key]: value }
+    saveLabelSettings(next)
+    return next
+  })
   const setPriceField = (channel, key, value) => setForm((current) => {
     const next = { ...current, [`${channel}_${key}`]: value }
     const discountKey = `${channel}_discount`
@@ -193,7 +196,7 @@ const ProductForm = ({ product, existingProducts = [], onSave, onCancel }) => {
       </div>
 
       <form onSubmit={handleSubmit} className="p-6">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.1fr_0.9fr]">
           <section className="rounded-2xl border border-slate-100 bg-slate-50/70 p-5">
             <div className="mb-4">
               <h4 className="text-sm font-semibold text-slate-900">Product details</h4>
@@ -221,9 +224,11 @@ const ProductForm = ({ product, existingProducts = [], onSave, onCancel }) => {
               </label>
               <label className={labelClass}><span>Product name <span className="text-rose-500">*</span></span><input required value={form.product_name} onChange={(e) => set('product_name', e.target.value)} placeholder="e.g. Gold plated necklace" className={fieldClass} /></label>
               <label className={labelClass}><span>Category <span className="text-rose-500">*</span></span><select required value={form.category_id} onChange={(e) => set('category_id', e.target.value)} className={fieldClass}><option value="">Select category</option>{categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.category_name}</option>)}</select></label>
-              <label className={labelClass}><span>Expiry date <span className="text-xs font-normal text-slate-400">(optional)</span></span><ExpiryDatePicker value={form.expiry_date} onChange={(value) => set('expiry_date', value)} /></label>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+                <label className={`${labelClass} sm:col-span-3`}><span>Expiry date <span className="text-xs font-normal text-slate-400">(optional)</span></span><ExpiryDatePicker value={form.expiry_date} onChange={(value) => set('expiry_date', value)} /></label>
+                <label className={labelClass}><span>Cost (₹) <span className="text-rose-500">*</span></span><input type="number" required min="0" step="0.01" value={form.cost} onChange={(e) => set('cost', e.target.value)} placeholder="0.00" className={fieldClass} /></label>
+              </div>
               <label className={labelClass}><span>Description <span className="text-xs font-normal text-slate-400">(optional)</span></span><textarea rows="3" value={form.description} onChange={(e) => set('description', e.target.value)} placeholder="Short description shown to customers" className={`${fieldClass} resize-y`} /></label>
-              <label className={labelClass}><span>Cost (₹) <span className="text-rose-500">*</span></span><input type="number" required min="0" step="0.01" value={form.cost} onChange={(e) => set('cost', e.target.value)} placeholder="0.00" className={fieldClass} /></label>
             </div>
           </section>
 
@@ -238,42 +243,74 @@ const ProductForm = ({ product, existingProducts = [], onSave, onCancel }) => {
           </section>
         </div>
 
-        <section className="mt-6 rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50/80 via-white to-white p-5">
-          <div className="mb-4 flex items-center gap-3">
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-100 text-emerald-700"><Tag className="h-4 w-4" /></div>
-            <div className="min-w-0">
-              <h4 className="text-sm font-semibold text-emerald-900">Retail pricing</h4>
-              <p className="text-xs text-emerald-700/80">Enter MRP and either the selling price or discount — the other fields update automatically.</p>
+        <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <section className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-100/90 via-emerald-50/60 to-white p-5">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-100 text-emerald-700"><Tag className="h-4 w-4" /></div>
+              <div className="min-w-0">
+                <h4 className="text-sm font-semibold text-emerald-900">Retail pricing</h4>
+                <p className="mt-0.5 truncate text-xs text-emerald-700/80">MRP and selling price link together.</p>
+              </div>
             </div>
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <label className={labelClass}><span>Retail stock <span className="text-rose-500">*</span></span><input type="number" required min="0" step="1" value={form.retail_stock} onChange={(e) => set('retail_stock', e.target.value)} className={fieldClass} /></label>
-            <label className={labelClass}><span>Retail MRP (₹) <span className="text-rose-500">*</span></span><input type="number" required min="0" step="0.01" value={form.retail_mrp} onChange={(e) => setPriceField('retail', 'mrp', e.target.value)} className={fieldClass} /></label>
-            <label className={labelClass}><span>Discount (%)</span><input type="number" min="0" max="100" step="0.01" value={form.retail_discount} onChange={(e) => setPriceField('retail', 'discount', e.target.value)} placeholder="Optional" className={fieldClass} /></label>
-            <label className={labelClass}><span>Retail selling price (₹) <span className="text-rose-500">*</span></span><input type="number" required min="0" step="0.01" value={form.retail_price} onChange={(e) => setPriceField('retail', 'price', e.target.value)} className={fieldClass} /></label>
-          </div>
-        </section>
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+              <label className={pricingLabelClass}><span>Stock <span className="text-rose-500">*</span></span><input type="number" required min="0" step="1" value={form.retail_stock} onChange={(e) => set('retail_stock', e.target.value)} className={qtyFieldClass} /></label>
+              <label className={pricingLabelClass}><span>MRP (₹) <span className="text-rose-500">*</span></span><input type="number" required min="0" step="0.01" value={form.retail_mrp} onChange={(e) => setPriceField('retail', 'mrp', e.target.value)} className={priceFieldClass} /></label>
+              <label className={pricingLabelClass}><span>Discount (%)</span><input type="number" min="0" max="100" step="0.01" value={form.retail_discount} onChange={(e) => setPriceField('retail', 'discount', e.target.value)} placeholder="Optional" className={priceFieldClass} /></label>
+              <label className={pricingLabelClass}><span>Selling (₹) <span className="text-rose-500">*</span></span><input type="number" required min="0" step="0.01" value={form.retail_price} onChange={(e) => setPriceField('retail', 'price', e.target.value)} className={priceFieldClass} /></label>
+            </div>
+          </section>
 
-        <section className="mt-6 rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50/80 via-white to-white p-5">
+          <section className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-100/90 via-blue-50/60 to-white p-5">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-blue-100 text-blue-700"><Building2 className="h-4 w-4" /></div>
+              <div className="min-w-0">
+                <h4 className="text-sm font-semibold text-blue-900">Wholesale pricing</h4>
+                <p className="mt-0.5 truncate text-xs text-blue-700/80">Visible to approved customers only.</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+              <label className={pricingLabelClass}><span>Stock <span className="text-rose-500">*</span></span><input type="number" required min="0" step="1" value={form.wholesale_stock} onChange={(e) => set('wholesale_stock', e.target.value)} className={qtyFieldClass} /></label>
+              <label className={pricingLabelClass}><span>MRP (₹) <span className="text-rose-500">*</span></span><input type="number" required min="0" step="0.01" value={form.wholesale_mrp} onChange={(e) => setPriceField('wholesale', 'mrp', e.target.value)} className={priceFieldClass} /></label>
+              <label className={pricingLabelClass}><span>Discount (%)</span><input type="number" min="0" max="100" step="0.01" value={form.wholesale_discount} onChange={(e) => setPriceField('wholesale', 'discount', e.target.value)} placeholder="Optional" className={priceFieldClass} /></label>
+              <label className={pricingLabelClass}><span>Selling (₹) <span className="text-rose-500">*</span></span><input type="number" required min="0" step="0.01" value={form.wholesale_price} onChange={(e) => setPriceField('wholesale', 'price', e.target.value)} className={priceFieldClass} /></label>
+              <label className={pricingLabelClass}><span>Min qty <span className="text-rose-500">*</span></span><input type="number" required min="1" step="1" value={form.min_order_qty} onChange={(e) => set('min_order_qty', e.target.value)} className={qtyFieldClass} /></label>
+            </div>
+          </section>
+        </div>
+
+        <section className="mt-5 rounded-2xl border border-violet-100 bg-gradient-to-br from-violet-50/70 via-white to-white p-5">
           <div className="mb-4 flex items-center gap-3">
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-blue-100 text-blue-700"><Building2 className="h-4 w-4" /></div>
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-violet-100 text-violet-700"><Barcode className="h-4 w-4" /></div>
             <div className="min-w-0">
-              <h4 className="text-sm font-semibold text-blue-900">Wholesale pricing</h4>
-              <p className="text-xs text-blue-700/80">Shown only to approved wholesale customers. MRP and selling price sync with the discount.</p>
+              <h4 className="text-sm font-semibold text-violet-900">Barcode label</h4>
+              <p className="text-xs text-violet-700/80">Preview the label and adjust the print format. Changes are saved for next time.</p>
             </div>
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-            <label className={labelClass}><span>Wholesale stock <span className="text-rose-500">*</span></span><input type="number" required min="0" step="1" value={form.wholesale_stock} onChange={(e) => set('wholesale_stock', e.target.value)} className={fieldClass} /></label>
-            <label className={labelClass}><span>Wholesale MRP (₹) <span className="text-rose-500">*</span></span><input type="number" required min="0" step="0.01" value={form.wholesale_mrp} onChange={(e) => setPriceField('wholesale', 'mrp', e.target.value)} className={fieldClass} /></label>
-            <label className={labelClass}><span>Discount (%)</span><input type="number" min="0" max="100" step="0.01" value={form.wholesale_discount} onChange={(e) => setPriceField('wholesale', 'discount', e.target.value)} placeholder="Optional" className={fieldClass} /></label>
-            <label className={labelClass}><span>Wholesale selling price (₹) <span className="text-rose-500">*</span></span><input type="number" required min="0" step="0.01" value={form.wholesale_price} onChange={(e) => setPriceField('wholesale', 'price', e.target.value)} className={fieldClass} /></label>
-            <label className={labelClass}><span>Minimum order qty <span className="text-rose-500">*</span></span><input type="number" required min="1" step="1" value={form.min_order_qty} onChange={(e) => set('min_order_qty', e.target.value)} className={fieldClass} /></label>
+          <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
+            <BarcodeLabelPreview code={form.product_code} name={form.product_name.trim() || 'Product'} cost={form.cost} sellingPrice={form.retail_price} settings={labelSettings} />
+            <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-3 gap-4">
+                <label className={pricingLabelClass}><span>Copies</span><input type="number" min="1" max="500" step="1" value={labelSettings.copies} onChange={(e) => setLabelSetting('copies', e.target.value)} className={qtyFieldClass} /></label>
+                <label className={pricingLabelClass}><span>Width (mm)</span><input type="number" min="20" max="200" step="1" value={labelSettings.labelWidth} onChange={(e) => setLabelSetting('labelWidth', e.target.value)} className={qtyFieldClass} /></label>
+                <label className={pricingLabelClass}><span>Height (px)</span><input type="number" min="20" max="200" step="1" value={labelSettings.barcodeHeight} onChange={(e) => setLabelSetting('barcodeHeight', e.target.value)} className={qtyFieldClass} /></label>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-3">
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Show on label</p>
+                <div className="flex flex-wrap gap-x-5 gap-y-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-slate-700"><input type="checkbox" checked={labelSettings.showName} onChange={(e) => setLabelSetting('showName', e.target.checked)} className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500" />Product name</label>
+                  <label className="flex items-center gap-2 text-sm font-medium text-slate-700"><input type="checkbox" checked={labelSettings.showCode} onChange={(e) => setLabelSetting('showCode', e.target.checked)} className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500" />Product code</label>
+                  <label className="flex items-center gap-2 text-sm font-medium text-slate-700"><input type="checkbox" checked={labelSettings.showCost} onChange={(e) => setLabelSetting('showCost', e.target.checked)} className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500" />Cost (coded)</label>
+                  <label className="flex items-center gap-2 text-sm font-medium text-slate-700"><input type="checkbox" checked={labelSettings.showSellingPrice} onChange={(e) => setLabelSetting('showSellingPrice', e.target.checked)} className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500" />Selling price (₹)</label>
+                </div>
+              </div>
+              <p className="text-xs text-slate-400">Cost is coded: 1–9 → a–i and 0 → z. The printer and paper are chosen in the browser print dialog.</p>
+            </div>
           </div>
         </section>
 
         <div className="sticky bottom-0 z-10 -mx-6 -mb-6 mt-6 flex flex-wrap items-center gap-3 rounded-b-2xl border-t border-slate-100 bg-white/90 px-6 py-4 backdrop-blur">
           <button type="submit" disabled={loading} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-200 transition hover:from-emerald-700 hover:to-teal-700 disabled:cursor-not-allowed disabled:opacity-60"><Save className="h-4 w-4" />{loading ? 'Saving…' : 'Save product'}</button>
-          {!product && form.product_code.trim() && <button type="button" onClick={() => printProductCode(form.product_code.trim(), form.product_name.trim() || 'Product')} className="inline-flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-5 py-2.5 text-sm font-semibold text-violet-700 transition hover:bg-violet-100" title="Print the custom product code"><Printer className="h-4 w-4" />Print code</button>}
+          <button type="button" onClick={() => printProductCode(form.product_code.trim(), form.product_name.trim() || 'Product', form.cost, form.retail_price, labelSettings)} disabled={!form.product_code.trim()} className="inline-flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-5 py-2.5 text-sm font-semibold text-violet-700 transition hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-50" title={form.product_code.trim() ? 'Print barcode for this product code' : 'Enter a product code to enable barcode printing'}><Printer className="h-4 w-4" />Print barcode</button>
           <button type="button" onClick={onCancel} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"><X className="h-4 w-4" />Cancel</button>
           <span className="ml-auto hidden text-xs text-slate-400 sm:block">Fields marked <span className="text-rose-500">*</span> are required</span>
         </div>

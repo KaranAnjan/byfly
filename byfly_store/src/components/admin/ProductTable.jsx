@@ -1,5 +1,7 @@
-import { Pencil, Trash2, Package } from 'lucide-react'
+import { useState } from 'react'
+import { Pencil, Printer, Trash2, Package } from 'lucide-react'
 import { getImageUrl } from '../../lib/imageUrl'
+import BarcodePrintModal from './BarcodePrintModal'
 
 const money = (value) => (value != null && value !== '' ? `₹${Number(value).toLocaleString('en-IN')}` : '—')
 
@@ -23,7 +25,9 @@ const ExpiryCell = ({ value }) => {
 }
 
 const ProductTable = ({ products, loading, onEdit, onDelete }) => {
+  const [printProduct, setPrintProduct] = useState(null)
   return (
+    <>
     <div className="overflow-hidden rounded-2xl bg-white shadow-[0_18px_50px_-24px_rgba(31,39,84,0.45)] ring-1 ring-slate-200/70">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[900px]">
@@ -94,6 +98,7 @@ const ProductTable = ({ products, loading, onEdit, onDelete }) => {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-1">
+                      <button onClick={() => setPrintProduct(product)} aria-label={`Print barcode for ${product.product_name}`} title="Print barcode" className="rounded-lg p-2 text-slate-400 transition hover:bg-purple-50 hover:text-purple-600"><Printer className="h-4 w-4" /></button>
                       <button onClick={() => onEdit(product)} aria-label={`Edit ${product.product_name}`} title="Edit" className="rounded-lg p-2 text-slate-400 transition hover:bg-violet-50 hover:text-violet-600"><Pencil className="h-4 w-4" /></button>
                       <button onClick={() => onDelete(product.id)} aria-label={`Delete ${product.product_name}`} title="Delete" className="rounded-lg p-2 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"><Trash2 className="h-4 w-4" /></button>
                     </div>
@@ -106,6 +111,8 @@ const ProductTable = ({ products, loading, onEdit, onDelete }) => {
         </table>
       </div>
     </div>
+    {printProduct && <BarcodePrintModal product={printProduct} onClose={() => setPrintProduct(null)} />}
+    </>
   )
 }
 
