@@ -147,7 +147,7 @@ const ManageProducts = () => {
 
   return (
     <div className="px-5 pb-8 pt-8 sm:px-8 sm:pt-8">
-      <div className="flex flex-wrap gap-3 justify-between items-center mb-6">
+      <div className="sticky top-0 z-30 -mx-5 mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/70 bg-[#f4f6fb]/95 px-5 py-4 backdrop-blur sm:-mx-8 sm:px-8">
         <div className="flex min-w-0 items-center gap-3">{showForm && <button type="button" onClick={handleBackToProducts} className="rounded-lg p-2 text-gray-600 hover:bg-gray-200" aria-label="Back to products"><ArrowLeft className="h-5 w-5" /></button>}<h1 className={`truncate text-2xl font-bold text-gray-900 transition-all duration-300 ${searchExpanded ? 'max-w-0 -translate-x-2 opacity-0' : 'max-w-[24rem] opacity-100'}`}>{productNo ? `Edit Product ${productNo}` : 'Manage Products'}</h1></div>
         {!showForm && (
           <div className="flex flex-wrap gap-2">

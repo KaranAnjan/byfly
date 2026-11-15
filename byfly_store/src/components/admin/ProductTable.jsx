@@ -3,7 +3,7 @@ import { Pencil, Printer, Trash2, Package } from 'lucide-react'
 import { getImageUrl } from '../../lib/imageUrl'
 import BarcodePrintModal from './BarcodePrintModal'
 
-const money = (value) => (value != null && value !== '' ? `₹${Number(value).toLocaleString('en-IN')}` : '—')
+const money = (value) => (value != null && value !== '' ? `₹${Math.round(Number(value)).toLocaleString('en-IN')}` : '—')
 
 const discountPercent = (mrp, price) => {
   const mrpValue = Number(mrp), priceValue = Number(price)
@@ -37,8 +37,8 @@ const ProductTable = ({ products, loading, onEdit, onDelete }) => {
               <th className="px-4 py-3.5">Category</th>
               <th className="px-4 py-3.5">Expiry</th>
               <th className="px-4 py-3.5 text-right">Cost</th>
-              <th className="px-4 py-3.5">Retail</th>
-              <th className="px-4 py-3.5">Wholesale</th>
+<th className="px-4 py-3.5">Retail</th>
+               <th className="px-4 py-3.5">Wholesale</th>
               <th className="px-4 py-3.5">Stock</th>
               <th className="px-4 py-3.5 text-right">Actions</th>
             </tr>
@@ -74,19 +74,21 @@ const ProductTable = ({ products, loading, onEdit, onDelete }) => {
                   <td className="px-4 py-3 text-right font-medium tabular-nums text-slate-700">{money(product.cost)}</td>
                   <td className="px-4 py-3">
                     <div className="space-y-1">
-                      <p className="font-semibold tabular-nums text-slate-900">{money(product.price)}</p>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <p className="font-semibold tabular-nums text-slate-900">{money(product.price)}</p>
+                        {retailOff != null && <span className="inline-flex rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">{retailOff}% off</span>}
+                      </div>
                       <p className="text-[11px] tabular-nums text-slate-400 line-through">{money(product.mrp)}</p>
-                      {retailOff != null && <span className="inline-flex rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">{retailOff}% off</span>}
                     </div>
                   </td>
                   <td className="px-4 py-3">
                     <div className="space-y-1">
-                      <p className="font-semibold tabular-nums text-slate-900">{money(product.wholesale_price)}</p>
-                      <p className="text-[11px] tabular-nums text-slate-400 line-through">{money(product.wholesale_mrp)}</p>
-                      <div className="flex items-center gap-1">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <p className="font-semibold tabular-nums text-slate-900">{money(product.wholesale_price)}</p>
                         {wholesaleOff != null && <span className="inline-flex rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">{wholesaleOff}% off</span>}
                         <span className="text-[10px] text-slate-400">Min {product.min_order_qty || 1}</span>
                       </div>
+                      <p className="text-[11px] tabular-nums text-slate-400 line-through">{money(product.wholesale_mrp)}</p>
                     </div>
                   </td>
                   <td className="px-4 py-3">
