@@ -98,8 +98,10 @@ const ProductForm = ({ product, existingProducts = [], onSave, onCancel }) => {
   const [pendingFiles, setPendingFiles] = useState([])
   const [form, setForm] = useState({ product_name: '', category_id: '', product_code: '', description: '', expiry_date: '', images: [], cost: '', retail_stock: 0, wholesale_stock: 0, wholesale_price: '', min_order_qty: 1, retail_price: '', retail_mrp: '', retail_discount: '0', wholesale_mrp: '', wholesale_discount: '0' })
   const [labelSettings, setLabelSettings] = useState(loadLabelSettings)
+  const [labelPrice, setLabelPrice] = useState('')
 
   useEffect(() => {
+    setLabelPrice('')
     if (!product) return
     setPendingFiles([])
     const retailPrice = product.price ?? product.retail_price ?? ''
@@ -287,12 +289,13 @@ const ProductForm = ({ product, existingProducts = [], onSave, onCancel }) => {
             </div>
           </div>
           <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
-            <BarcodeLabelPreview code={form.product_code} name={form.product_name.trim() || 'Product'} cost={form.cost} sellingPrice={form.retail_price} settings={labelSettings} />
+            <BarcodeLabelPreview code={form.product_code} name={form.product_name.trim() || 'Product'} cost={form.cost} sellingPrice={labelPrice} settings={labelSettings} />
             <div className="flex flex-col gap-4">
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                 <label className={pricingLabelClass}><span>Copies</span><input type="number" min="1" max="500" step="1" value={labelSettings.copies} onChange={(e) => setLabelSetting('copies', e.target.value)} className={qtyFieldClass} /></label>
                 <label className={pricingLabelClass}><span>Width (mm)</span><input type="number" min="20" max="200" step="1" value={labelSettings.labelWidth} onChange={(e) => setLabelSetting('labelWidth', e.target.value)} className={qtyFieldClass} /></label>
                 <label className={pricingLabelClass}><span>Height (px)</span><input type="number" min="20" max="200" step="1" value={labelSettings.barcodeHeight} onChange={(e) => setLabelSetting('barcodeHeight', e.target.value)} className={qtyFieldClass} /></label>
+                <label className={pricingLabelClass}><span>Selling price (₹)</span><input type="text" value={labelPrice} onChange={(e) => setLabelPrice(e.target.value)} placeholder="Custom text" className={qtyFieldClass} /></label>
               </div>
               <div className="rounded-xl border border-slate-200 bg-white p-3">
                 <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Show on label</p>
@@ -303,14 +306,15 @@ const ProductForm = ({ product, existingProducts = [], onSave, onCancel }) => {
                   <label className="flex items-center gap-2 text-sm font-medium text-slate-700"><input type="checkbox" checked={labelSettings.showSellingPrice} onChange={(e) => setLabelSetting('showSellingPrice', e.target.checked)} className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500" />Selling price (₹)</label>
                 </div>
               </div>
-              <p className="text-xs text-slate-400">Cost is coded: 1–9 → a–i and 0 → z. The printer and paper are chosen in the browser print dialog.</p>
+              {labelSettings.showCost && <p className="text-xs text-slate-400">Cost is coded: 1–9 → a–i and 0 → z.</p>}
+              <p className="text-xs text-slate-400">The printer and paper are chosen in the browser print dialog.</p>
             </div>
           </div>
         </section>
 
         <div className="sticky bottom-0 z-10 -mx-6 -mb-6 mt-6 flex flex-wrap items-center gap-3 rounded-b-2xl border-t border-slate-100 bg-white/90 px-6 py-4 backdrop-blur">
           <button type="submit" disabled={loading} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-200 transition hover:from-emerald-700 hover:to-teal-700 disabled:cursor-not-allowed disabled:opacity-60"><Save className="h-4 w-4" />{loading ? 'Saving…' : 'Save product'}</button>
-          <button type="button" onClick={() => printProductCode(form.product_code.trim(), form.product_name.trim() || 'Product', form.cost, form.retail_price, labelSettings)} disabled={!form.product_code.trim()} className="inline-flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-5 py-2.5 text-sm font-semibold text-violet-700 transition hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-50" title={form.product_code.trim() ? 'Print barcode for this product code' : 'Enter a product code to enable barcode printing'}><Printer className="h-4 w-4" />Print barcode</button>
+          <button type="button" onClick={() => printProductCode(form.product_code.trim(), form.product_name.trim() || 'Product', form.cost, labelPrice, labelSettings)} disabled={!form.product_code.trim()} className="inline-flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-5 py-2.5 text-sm font-semibold text-violet-700 transition hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-50" title={form.product_code.trim() ? 'Print barcode for this product code' : 'Enter a product code to enable barcode printing'}><Printer className="h-4 w-4" />Print barcode</button>
           <button type="button" onClick={onCancel} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"><X className="h-4 w-4" />Cancel</button>
           <span className="ml-auto hidden text-xs text-slate-400 sm:block">Fields marked <span className="text-rose-500">*</span> are required</span>
         </div>

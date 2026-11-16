@@ -4,7 +4,7 @@ import toast from 'react-hot-toast'
 const ESCAPE_MAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (character) => ESCAPE_MAP[character])
 
-export const LABEL_SETTINGS_KEY = 'byfly:barcode-label-settings-v2'
+export const LABEL_SETTINGS_KEY = 'byfly:barcode-label-settings-v4'
 
 export const DEFAULT_LABEL_SETTINGS = {
   copies: 1,
@@ -13,7 +13,7 @@ export const DEFAULT_LABEL_SETTINGS = {
   showName: true,
   showCode: true,
   showCost: false,
-  showSellingPrice: true,
+  showSellingPrice: false,
 }
 
 export const loadLabelSettings = () => {
@@ -40,6 +40,7 @@ export const formatMoney = (value) => {
 }
 
 export const formatSellingPrice = (value) => {
+  if (String(value ?? '').trim() === '') return ''
   const number = Number(value)
   return Number.isFinite(number) ? `₹${Math.round(number).toLocaleString('en-IN')}` : ''
 }
@@ -84,7 +85,7 @@ export const labelCss = (settings) => {
 
 export const buildLabelBody = ({ code, name, cost, sellingPrice, settings, barcodeSvg }) => {
   const costText = settings.showCost ? encodeCost(cost) : ''
-  const sellingText = settings.showSellingPrice ? formatSellingPrice(sellingPrice) : ''
+  const sellingText = settings.showSellingPrice ? escapeHtml(String(sellingPrice ?? '').trim()) : ''
   const priceItems = []
   if (costText) priceItems.push(`<span class="bfl-cost">${costText}</span>`)
   if (sellingText) priceItems.push(`<span class="bfl-selling">${sellingText}</span>`)

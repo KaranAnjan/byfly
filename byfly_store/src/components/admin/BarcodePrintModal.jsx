@@ -9,6 +9,7 @@ const labelClass = 'flex flex-col gap-1.5 text-sm font-medium text-slate-700'
 
 const BarcodePrintModal = ({ product, onClose }) => {
   const [settings, setSettings] = useState(loadLabelSettings)
+  const [labelPrice, setLabelPrice] = useState('')
 
   const setSetting = (key, value) => setSettings((current) => {
     const next = { ...current, [key]: value }
@@ -17,7 +18,7 @@ const BarcodePrintModal = ({ product, onClose }) => {
   })
 
   const handlePrint = () => {
-    printProductCode(product.product_code, product.product_name, product.cost, product.price, settings)
+    printProductCode(product.product_code, product.product_name, product.cost, labelPrice, settings)
   }
 
   return createPortal(
@@ -35,12 +36,13 @@ const BarcodePrintModal = ({ product, onClose }) => {
         </div>
 
         <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
-          <BarcodeLabelPreview code={product.product_code} name={product.product_name} cost={product.cost} sellingPrice={product.price} settings={settings} />
+          <BarcodeLabelPreview code={product.product_code} name={product.product_name} cost={product.cost} sellingPrice={labelPrice} settings={settings} />
           <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <label className={labelClass}><span>Copies</span><input type="number" min="1" max="500" step="1" value={settings.copies} onChange={(e) => setSetting('copies', e.target.value)} className={fieldClass} /></label>
               <label className={labelClass}><span>Width (mm)</span><input type="number" min="20" max="200" step="1" value={settings.labelWidth} onChange={(e) => setSetting('labelWidth', e.target.value)} className={fieldClass} /></label>
               <label className={labelClass}><span>Height (px)</span><input type="number" min="20" max="200" step="1" value={settings.barcodeHeight} onChange={(e) => setSetting('barcodeHeight', e.target.value)} className={fieldClass} /></label>
+              <label className={labelClass}><span>Selling price (₹)</span><input type="text" value={labelPrice} onChange={(e) => setLabelPrice(e.target.value)} placeholder="Custom text" className={fieldClass} /></label>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
               <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Show on label</p>
@@ -51,7 +53,8 @@ const BarcodePrintModal = ({ product, onClose }) => {
                 <label className="flex items-center gap-2 text-sm font-medium text-slate-700"><input type="checkbox" checked={settings.showSellingPrice} onChange={(e) => setSetting('showSellingPrice', e.target.checked)} className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500" />Selling price (₹)</label>
               </div>
             </div>
-            <p className="text-xs text-slate-400">Cost is coded: 1–9 → a–i and 0 → z. The printer and paper are chosen in the browser print dialog.</p>
+            {settings.showCost && <p className="text-xs text-slate-400">Cost is coded: 1–9 → a–i and 0 → z.</p>}
+            <p className="text-xs text-slate-400">The printer and paper are chosen in the browser print dialog.</p>
           </div>
         </div>
 
