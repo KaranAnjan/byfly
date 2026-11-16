@@ -63,7 +63,7 @@ const ManageStock = () => {
                 {suggestions.map((product) => (
                   <button key={product.id} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { setSearch(product.product_code || product.product_name); setShowSuggestions(false) }} className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm transition hover:bg-violet-50">
                     <span className="min-w-0">
-                      <span className="block truncate text-slate-700">{product.product_name}</span>
+                      <span className="block truncate text-slate-700" title={product.product_name}>{product.product_name}</span>
                       <span className="block font-mono text-[10px] text-slate-400">{product.product_code}</span>
                     </span>
                     <span className="flex-shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold tabular-nums text-slate-600">{product.stock_by_channel?.total ?? 0}</span>
@@ -100,7 +100,7 @@ const ManageStock = () => {
                         <div className="grid h-10 w-10 place-items-center rounded-xl bg-slate-100 ring-1 ring-slate-200"><Package className="h-5 w-5 text-slate-400" /></div>
                       )}
                       <div className="min-w-0">
-                        <p className="max-w-[260px] truncate font-semibold text-slate-900">{product.product_name}</p>
+                        <p className="line-clamp-2 max-w-[260px] font-semibold leading-snug text-slate-900" title={product.product_name}>{product.product_name}</p>
                         <p className="mt-0.5 font-mono text-[11px] text-slate-400">{product.product_code}</p>
                       </div>
                     </div>

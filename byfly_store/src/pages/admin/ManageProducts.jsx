@@ -163,7 +163,7 @@ const ManageProducts = () => {
                   {!loading && suggestions.length === 0 && <div className="px-3 py-2 text-xs text-slate-400">No products found.</div>}
                   {suggestions.map((product) => (
                     <button key={product.id} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { setSearch(product.product_name); setShowSuggestions(false) }} className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-slate-50">
-                      <span className="truncate text-slate-700">{product.product_name}</span>
+                      <span className="truncate text-slate-700" title={product.product_name}>{product.product_name}</span>
                       <span className="flex-shrink-0 font-mono text-[10px] text-slate-400">{product.product_code}</span>
                     </button>
                   ))}

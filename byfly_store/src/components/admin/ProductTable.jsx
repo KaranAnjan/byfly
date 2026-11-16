@@ -49,7 +49,7 @@ const ProductTable = ({ products, loading, onEdit, onDelete }) => {
               const retail = product.stock_by_channel?.retail ?? 0
               const wholesale = product.stock_by_channel?.wholesale ?? 0
               const total = product.stock_by_channel?.total ?? product.stock ?? 0
-              const retailOff = discountPercent(product.mrp, product.price)
+              const retailOff = discountPercent(product.retail_mrp ?? product.mrp, product.retail_price ?? product.price)
               const wholesaleOff = discountPercent(product.wholesale_mrp, product.wholesale_price)
               const stockTone = total === 0 ? 'bg-rose-50 text-rose-600' : total <= 10 ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'
               return (
@@ -62,7 +62,7 @@ const ProductTable = ({ products, loading, onEdit, onDelete }) => {
                         <div className="grid h-11 w-11 place-items-center rounded-xl bg-slate-100 ring-1 ring-slate-200"><Package className="h-5 w-5 text-slate-400" /></div>
                       )}
                       <div className="min-w-0">
-                        <p className="max-w-[220px] truncate font-semibold text-slate-900">{product.product_name}</p>
+                        <p className="line-clamp-2 max-w-[240px] font-semibold leading-snug text-slate-900" title={product.product_name}>{product.product_name}</p>
                         <p className="mt-0.5 font-mono text-[11px] text-slate-400">{product.product_code}</p>
                       </div>
                     </div>
@@ -75,10 +75,10 @@ const ProductTable = ({ products, loading, onEdit, onDelete }) => {
                   <td className="px-4 py-3">
                     <div className="space-y-1">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <p className="font-semibold tabular-nums text-slate-900">{money(product.price)}</p>
+                        <p className="font-semibold tabular-nums text-slate-900">{money(product.retail_price ?? product.price)}</p>
                         {retailOff != null && <span className="inline-flex rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">{retailOff}% off</span>}
                       </div>
-                      <p className="text-[11px] tabular-nums text-slate-400 line-through">{money(product.mrp)}</p>
+                      <p className="text-[11px] tabular-nums text-slate-400 line-through">{money(product.retail_mrp ?? product.mrp)}</p>
                     </div>
                   </td>
                   <td className="px-4 py-3">

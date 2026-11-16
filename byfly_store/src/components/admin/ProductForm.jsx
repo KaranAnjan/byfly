@@ -104,8 +104,8 @@ const ProductForm = ({ product, existingProducts = [], onSave, onCancel }) => {
     setLabelPrice('')
     if (!product) return
     setPendingFiles([])
-    const retailPrice = product.price ?? product.retail_price ?? ''
-    const retailMrp = product.mrp ?? product.retail_mrp ?? ''
+    const retailPrice = product.retail_price ?? product.price ?? ''
+    const retailMrp = product.retail_mrp ?? product.mrp ?? ''
     const wholesalePrice = product.wholesale_price ?? ''
     const wholesaleMrp = product.wholesale_mrp ?? ''
     setForm({ product_name: product.product_name || '', category_id: product.category_id || '', product_code: product.product_code || '', description: product.description || '', expiry_date: product.expiry_date ? String(product.expiry_date).slice(0, 10) : '', images: product.images || [], cost: product.cost ?? '', retail_stock: product.stock_by_channel?.retail ?? product.stock ?? 0, wholesale_stock: product.stock_by_channel?.wholesale ?? 0, wholesale_price: wholesalePrice, min_order_qty: product.min_order_qty || 1, retail_price: retailPrice, retail_mrp: retailMrp, retail_discount: discountFor(retailMrp, retailPrice) || '0', wholesale_mrp: wholesaleMrp, wholesale_discount: discountFor(wholesaleMrp, wholesalePrice) || '0' })

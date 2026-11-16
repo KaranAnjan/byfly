@@ -173,7 +173,7 @@ const Dashboard = () => {
                 return (
                   <Link key={product.id} to={`/admin/stock-in?code=${encodeURIComponent(code)}`} className={`flex items-center gap-3 px-5 py-2 transition ${zero ? 'hover:bg-rose-50/60' : 'hover:bg-amber-50/60'}`}>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-slate-800">{product.product_name || 'Unnamed product'}</p>
+                      <p className="truncate text-sm font-medium text-slate-800" title={product.product_name || 'Unnamed product'}>{product.product_name || 'Unnamed product'}</p>
                       <p className="font-mono text-[10px] text-slate-400">{code}</p>
                     </div>
                     <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums ${zero ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-700'}`}>{stock}</span>
@@ -229,7 +229,7 @@ const Dashboard = () => {
               return (
                 <Link key={product.id} to={`/admin/stock-out?code=${encodeURIComponent(code)}`} className="flex items-center justify-between gap-4 px-5 py-3 transition hover:bg-rose-50">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-slate-700">{product.product_name || 'Unnamed product'}</p>
+                    <p className="truncate text-sm font-semibold text-slate-700" title={product.product_name || 'Unnamed product'}>{product.product_name || 'Unnamed product'}</p>
                     <p className="mt-0.5 text-xs text-slate-400">Expired {product.expiryDate.toLocaleDateString('en-IN')} · Stock: {stock}</p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
@@ -246,7 +246,7 @@ const Dashboard = () => {
               return (
                 <Link key={product.id} to={`/admin/products/${product.product_no || product.product_code}/edit`} className="flex items-center justify-between gap-4 px-5 py-3 transition hover:bg-amber-50">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-slate-700">{product.product_name || 'Unnamed product'}</p>
+                    <p className="truncate text-sm font-semibold text-slate-700" title={product.product_name || 'Unnamed product'}>{product.product_name || 'Unnamed product'}</p>
                     <p className="mt-0.5 text-xs text-slate-400">Expiry: {product.expiryDate.toLocaleDateString('en-IN')} · Stock: {stock}</p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
